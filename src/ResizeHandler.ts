@@ -7,7 +7,7 @@ export class ResizeHandler {
     this.app = app;
     this.onResize = this.onResize.bind(this);
   }
-  
+
   public register() {
     window.addEventListener("resize", this.onResize);
     this.onResize(); // Initial sizing
