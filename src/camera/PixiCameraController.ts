@@ -8,7 +8,7 @@ interface EventMap {
     centerY: number,
     scale: number,
     offsetX: number,
-    offsetY: number
+    offsetY: number,
   ) => void;
   "camera:clicked": (globalX: number, globalY: number) => void;
 }
@@ -34,7 +34,7 @@ export class PixiCameraController {
     app: Application,
     state: AppState,
     renderCallback: () => void,
-    eventBus: EventBus<EventMap>
+    eventBus: EventBus<EventMap>,
   ) {
     this.app = app;
     this.state = state;
@@ -131,7 +131,7 @@ export class PixiCameraController {
     // Update scale
     const newScale = Math.min(
       Math.max(this.state.cameraScale + zoomDelta, 0.5),
-      3
+      3,
     );
     if (newScale !== this.state.cameraScale) {
       this.state.cameraScale = newScale;
@@ -177,7 +177,7 @@ export class PixiCameraController {
       const scaleFactor = newDist / (this.initialPinchDistance || 1);
       const newScale = Math.min(
         Math.max(this.initialPinchScale * scaleFactor, 0.5),
-        3
+        3,
       );
 
       if (newScale !== this.state.cameraScale) {
@@ -212,7 +212,7 @@ export class PixiCameraController {
       centerY,
       this.state.cameraScale,
       this.state.offset.x,
-      this.state.offset.y
+      this.state.offset.y,
     );
   }
 

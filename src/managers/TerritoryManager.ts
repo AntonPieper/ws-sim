@@ -10,7 +10,7 @@ export class TerritoryManager {
 
     const bannerTiles = allTiles.filter((t) => t.type === "banner");
     let zones = bannerTiles.map((banner) =>
-      this.createBannerZone(banner.x, banner.y)
+      this.createBannerZone(banner.x, banner.y),
     );
     zones = this.mergeZones(zones);
     return zones;

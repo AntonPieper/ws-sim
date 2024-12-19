@@ -5,7 +5,7 @@ export class CityNameAssigner {
   assignNames(
     placedTiles: Tile[],
     cityNames: string[],
-    bearTrapPosition: Position | null
+    bearTrapPosition: Position | null,
   ) {
     const assignments: Record<string, string> = {};
     if (!bearTrapPosition) return assignments;
@@ -16,13 +16,13 @@ export class CityNameAssigner {
         a.x + a.size / 2,
         a.y + a.size / 2,
         bearTrapPosition.x,
-        bearTrapPosition.y
+        bearTrapPosition.y,
       );
       const distB = calculateDistance(
         b.x + b.size / 2,
         b.y + b.size / 2,
         bearTrapPosition.x,
-        bearTrapPosition.y
+        bearTrapPosition.y,
       );
       return distA - distB;
     });

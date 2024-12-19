@@ -6,13 +6,7 @@ import { GRID_SIZE } from "../data/constants";
 import { EventBus } from "../EventBus";
 
 interface EventMap {
-  "camera:moved": (
-    centerX: number,
-    centerY: number,
-    scale: number,
-    offsetX: number,
-    offsetY: number
-  ) => void;
+  "camera:moved": () => void;
   "camera:clicked": (globalX: number, globalY: number) => void;
   "tool:selected": (type: TileType | null, size: number) => void;
 }
@@ -24,10 +18,10 @@ export class PlacementManager {
   private renderCallback: () => void;
   private eventBus: EventBus<EventMap>;
 
-  private cameraController: {
+  private cameraController!: {
     centerOnTile: (tileX: number, tileY: number, tileSize: number) => void;
   };
-  private toolbox: {
+  private toolbox!: {
     selectToolProgrammatically: (type: TileType, size: number) => void;
   };
 
@@ -36,7 +30,7 @@ export class PlacementManager {
     scene: Scene,
     placementControls: PlacementControls,
     renderCallback: () => void,
-    eventBus: EventBus<EventMap>
+    eventBus: EventBus<EventMap>,
   ) {
     this.state = state;
     this.scene = scene;
@@ -68,7 +62,7 @@ export class PlacementManager {
       this.placementControls.show(
         this.canPlaceTile(this.state.previewTile),
         () => this.finalizePlacement(),
-        () => this.cancelPlacementMode()
+        () => this.cancelPlacementMode(),
       );
       this.renderCallback();
     } else {
@@ -104,7 +98,7 @@ export class PlacementManager {
         tile.x < existing.x + existing.size &&
         tile.x + tile.size > existing.x &&
         tile.y < existing.y + existing.size &&
-        tile.y + tile.size > existing.y
+        tile.y + tile.size > existing.y,
     );
   }
 
@@ -126,7 +120,7 @@ export class PlacementManager {
         };
         this.toolbox.selectToolProgrammatically(
           clickedTile.type,
-          clickedTile.size
+          clickedTile.size,
         );
 
         this.state.isInPlacementMode = true;
@@ -135,7 +129,7 @@ export class PlacementManager {
         this.cameraController.centerOnTile(
           clickedTile.x,
           clickedTile.y,
-          clickedTile.size
+          clickedTile.size,
         );
 
         this.renderCallback();
@@ -145,13 +139,7 @@ export class PlacementManager {
     }
   }
 
-  private onCameraMoved(
-    centerX: number,
-    centerY: number,
-    scale: number,
-    offsetX: number,
-    offsetY: number
-  ) {
+  private onCameraMoved() {
     if (this.state.isInPlacementMode) {
       this.updatePreviewTilePosition();
     }
@@ -166,10 +154,10 @@ export class PlacementManager {
     const centerY =
       view.height / 2 / this.state.cameraScale + this.state.offset.y;
     const gx = Math.floor(
-      centerX / GRID_SIZE - this.state.selectedTool.size / 2
+      centerX / GRID_SIZE - this.state.selectedTool.size / 2,
     );
     const gy = Math.floor(
-      centerY / GRID_SIZE - this.state.selectedTool.size / 2
+      centerY / GRID_SIZE - this.state.selectedTool.size / 2,
     );
 
     this.state.previewTile = {
@@ -180,7 +168,7 @@ export class PlacementManager {
     };
 
     this.placementControls.updateConfirmState(
-      this.canPlaceTile(this.state.previewTile)
+      this.canPlaceTile(this.state.previewTile),
     );
     this.renderCallback();
   }
@@ -191,15 +179,8 @@ export class PlacementManager {
         gx >= tile.x &&
         gx < tile.x + tile.size &&
         gy >= tile.y &&
-        gy < tile.y + tile.size
+        gy < tile.y + tile.size,
     );
-  }
-
-  private getTile(index: number): Tile | null {
-    if (index < 0 || index >= this.state.placedTiles.length) {
-      return null;
-    }
-    return this.state.placedTiles[index];
   }
 
   private popTile(index: number): Tile | null {

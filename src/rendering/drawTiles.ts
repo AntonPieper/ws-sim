@@ -7,7 +7,7 @@ import { calculateDistance, interpolateColor } from "../utils/utils";
 export function drawTiles(
   container: Container,
   state: AppState,
-  zones: Set<string>[]
+  zones: Set<string>[],
 ) {
   for (const tile of state.placedTiles) {
     drawSingleTile(container, tile, false, state, zones);
@@ -17,7 +17,7 @@ export function drawTiles(
 export function drawPreviewTile(
   container: Container,
   state: AppState,
-  zones: Set<string>[]
+  zones: Set<string>[],
 ) {
   if (state.previewTile) {
     drawSingleTile(container, state.previewTile, true, state, zones);
@@ -29,7 +29,7 @@ function drawSingleTile(
   tile: Tile,
   isPreview: boolean,
   state: AppState,
-  zones: Set<string>[]
+  zones: Set<string>[],
 ) {
   const size = tile.size * GRID_SIZE;
   const x = tile.x * GRID_SIZE;
@@ -49,14 +49,14 @@ function drawSingleTile(
         tile.x + tile.size / 2,
         tile.y + tile.size / 2,
         state.bearTrapPosition.x,
-        state.bearTrapPosition.y
+        state.bearTrapPosition.y,
       );
       const [r, g, b] = interpolateColor(
         [0, 255, 0],
         [255, 0, 0],
         state.colorMin,
         state.colorMax,
-        dist
+        dist,
       );
       fillColor = [r, g, b];
     } else {
@@ -117,7 +117,7 @@ function drawSingleTile(
       tile.x + tile.size / 2,
       tile.y + tile.size / 2,
       state.bearTrapPosition.x,
-      state.bearTrapPosition.y
+      state.bearTrapPosition.y,
     );
     const distText = new Text({
       text: `${dist.toFixed(2)} units`,
@@ -140,7 +140,7 @@ function drawSingleTile(
 
 function findTerritoryCoverage(
   tile: Tile,
-  zones: Set<string>[]
+  zones: Set<string>[],
 ): { inZone: boolean; zoneColor: number | null } {
   const totalCells = tile.size * tile.size;
   let bestZoneIndex = -1;

@@ -9,14 +9,14 @@ export class ModalManager {
   private onSaveCallback: (
     cityNames: string[],
     colorMin: number,
-    colorMax: number
+    colorMax: number,
   ) => void;
 
   constructor(
     modalId: string,
     saveBtnId: string,
     closeBtnId: string,
-    onSave: (cityNames: string[], colorMin: number, colorMax: number) => void
+    onSave: (cityNames: string[], colorMin: number, colorMax: number) => void,
   ) {
     const modalElement = document.getElementById(modalId);
     if (!modalElement) {
@@ -25,13 +25,13 @@ export class ModalManager {
     this.modal = modalElement as HTMLDivElement;
 
     this.cityNamesInput = document.getElementById(
-      "cityNamesInput"
+      "cityNamesInput",
     ) as HTMLTextAreaElement;
     this.colorMinInput = document.getElementById(
-      "colorMin"
+      "colorMin",
     ) as HTMLInputElement;
     this.colorMaxInput = document.getElementById(
-      "colorMax"
+      "colorMax",
     ) as HTMLInputElement;
     this.saveBtn = document.getElementById(saveBtnId) as HTMLButtonElement;
     this.closeBtn = document.getElementById(closeBtnId) as HTMLButtonElement;

@@ -4,7 +4,7 @@ import { BANNER_ZONE_COLORS, GRID_SIZE } from "./data/constants";
 import { CityNameAssigner } from "./managers/CityNameAssigner";
 import { TerritoryManager } from "./managers/TerritoryManager";
 import { drawPreviewTile, drawTiles } from "./rendering/drawTiles";
-import { GridRenderer } from "./rendering/GridRenderer";
+import { createGrid } from "./rendering/GridRenderer";
 
 export class Scene {
   public app: Application;
@@ -16,7 +16,6 @@ export class Scene {
   private tilesContainer: Container;
   private previewContainer: Container;
 
-  private gridRenderer: GridRenderer;
   private territoryManager: TerritoryManager;
   private cityNameAssigner: CityNameAssigner;
 
@@ -24,7 +23,7 @@ export class Scene {
     app: Application,
     state: AppState,
     territoryManager: TerritoryManager,
-    cityNameAssigner: CityNameAssigner
+    cityNameAssigner: CityNameAssigner,
   ) {
     this.app = app;
     this.state = state;
@@ -32,7 +31,7 @@ export class Scene {
     this.cityNameAssigner = cityNameAssigner;
 
     this.cameraContainer = new Container();
-    this.gridContainer = new Container();
+    this.gridContainer = createGrid();
     this.zoneContainer = new Container();
     this.tilesContainer = new Container();
     this.previewContainer = new Container();
@@ -41,24 +40,22 @@ export class Scene {
       this.gridContainer,
       this.zoneContainer,
       this.tilesContainer,
-      this.previewContainer
+      this.previewContainer,
     );
     this.app.stage.addChild(this.cameraContainer);
-
-    this.gridRenderer = new GridRenderer(this.gridContainer);
   }
 
   public render() {
     this.cameraContainer.position.set(
       -this.state.offset.x * this.state.cameraScale,
-      -this.state.offset.y * this.state.cameraScale
+      -this.state.offset.y * this.state.cameraScale,
     );
     this.cameraContainer.scale.set(this.state.cameraScale);
 
     this.zoneContainer.removeChildren();
     const zones = this.territoryManager.computeBannerZones(
       this.state.placedTiles,
-      this.state.previewTile ?? undefined
+      this.state.previewTile ?? undefined,
     );
 
     // Draw zone overlays
@@ -84,7 +81,7 @@ export class Scene {
     this.state.nameAssignments = this.cityNameAssigner.assignNames(
       this.state.placedTiles,
       this.state.cityNames,
-      this.state.bearTrapPosition
+      this.state.bearTrapPosition,
     );
     drawTiles(this.tilesContainer, this.state, zones);
 

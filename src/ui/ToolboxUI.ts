@@ -43,11 +43,11 @@ export class ToolboxUI {
   public selectToolProgrammatically(type: TileType, size: number): void {
     // Find the tool element that matches type and size
     const toolElement = Array.from(
-      this.toolboxElement.querySelectorAll(".tool")
+      this.toolboxElement.querySelectorAll(".tool"),
     ).find(
       (el) =>
         el.getAttribute("data-type") === type &&
-        el.getAttribute("data-size") === String(size)
+        el.getAttribute("data-size") === String(size),
     );
     if (toolElement) {
       this.selectTool(toolElement as HTMLElement);

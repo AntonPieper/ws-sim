@@ -19,7 +19,7 @@ export class ConfigurationManager {
     placedTiles: Tile[],
     cityNames: string[],
     colorMin: number,
-    colorMax: number
+    colorMax: number,
   ) {
     const configs = this.getAllConfigurations();
     configs[configName] = {
@@ -36,9 +36,7 @@ export class ConfigurationManager {
     return Object.keys(configs);
   }
 
-  loadConfiguration(
-    configName: string
-  ): {
+  loadConfiguration(configName: string): {
     tiles: Tile[];
     cityNames: string[];
     colorMin: number;

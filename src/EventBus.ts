@@ -4,7 +4,7 @@ export interface EventBus<
   Mapping extends { [K in keyof Mapping]: EventCallback } = Record<
     PropertyKey,
     EventCallback
-  >
+  >,
 > {
   on<K extends keyof Mapping>(event: K, callback: Mapping[K]): void;
   off<K extends keyof Mapping>(event: K, callback: Mapping[K]): void;
@@ -18,7 +18,7 @@ export class SimpleEventBus<
   Mapping extends { [K in keyof Mapping]: EventCallback } = Record<
     PropertyKey,
     EventCallback
-  >
+  >,
 > implements EventBus<Mapping>
 {
   private listeners = new Map<keyof Mapping, EventCallback[]>();
