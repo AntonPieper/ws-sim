@@ -1,0 +1,101 @@
+body {
+  margin: 0;
+  overflow: hidden;
+}
+
+canvas {
+  display: block;
+  background: #f0f0f0;
+}
+
+.toolbox {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6em, 1fr));
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.1);
+  padding: 10px;
+}
+
+.tool {
+  margin: 5px;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #aaa;
+  cursor: pointer;
+  text-align: center;
+  font-size: 16px;
+}
+
+.selected {
+  border: 2px solid blue;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border: 1px solid #ccc;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.color-scale {
+  display: flex;
+  flex-direction: row;
+}
+
+.input {
+  display: flex;
+  flex-direction: column;
+}
+
+.configure-button {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 1000;
+}
+
+.config-manager {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: white;
+  padding: 10px;
+  border: 1px solid #ccc;
+  z-index: 1000;
+}
+
+.placement-controls {
+  position: fixed;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+}
+
+.placement-controls button {
+  font-size: 20px;
+  padding: 10px;
+  cursor: pointer;
+}
+
+/* Highlight selected tool */
+.tool.selected {
+  border: 2px solid blue;
+  box-shadow: 0 0 10px rgba(0, 0, 255, 0.5);
+}
+
+/* Placement Controls Styling */
+.placement-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tile Placement Tool</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="toolbox" class="toolbox">
+      <div class="tool" data-type="bear_trap" data-size="3">
+        Bear Trap (3x3)
+      </div>
+      <div class="tool" data-type="headquarter" data-size="3">
+        Headquarter (3x3)
+      </div>
+      <div class="tool" data-type="city" data-size="2">City (2x2)</div>
+      <div class="tool" data-type="banner" data-size="1">Banner (1x1)</div>
+      <div class="tool" data-type="resource" data-size="2">Resource (2x2)</div>
+      <div class="tool" data-type="eraser" data-size="1">Eraser</div>
+    </div>
+
+    <div id="nameModal" class="modal">
+      <h3>Configure City Names</h3>
+      <textarea
+        id="cityNamesInput"
+        rows="10"
+        cols="30"
+        placeholder="One name per line"
+      ></textarea>
+      <br />
+      <div class="color-scale">
+        <div class="input">
+          <label for="colorMin">Min Distance</label>
+          <input id="colorMin" type="number" placeholder="Min Distance" />
+        </div>
+        <div class="input">
+          <label for="colorMax">Max Distance</label>
+          <input id="colorMax" type="number" placeholder="Max Distance" />
+        </div>
+      </div>
+      <button id="saveNames">Save</button>
+      <button id="closeModal">Close</button>
+    </div>
+
+    <button id="configureNames" class="configure-button">
+      Configure City Names
+    </button>
+
+    <div id="configManager" class="config-manager">
+      <h3>Configurations</h3>
+      <input
+        id="configName"
+        type="text"
+        placeholder="Enter config name"
+      /><br /><br />
+      <select id="configList">
+        <option value="">-- Select Configuration --</option></select
+      ><br /><br />
+      <button id="saveConfig">Save</button>
+      <button id="loadConfig">Load</button>
+      <button id="deleteConfig">Delete</button>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
