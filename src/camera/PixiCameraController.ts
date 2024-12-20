@@ -1,233 +1,202 @@
 import { Application, FederatedPointerEvent } from "pixi.js";
-import { AppState } from "../data/AppState";
 import { EventBus } from "../EventBus";
-
-interface EventMap {
-  "camera:moved": (
-    centerX: number,
-    centerY: number,
-    scale: number,
-    offsetX: number,
-    offsetY: number,
-  ) => void;
-  "camera:clicked": (globalX: number, globalY: number) => void;
-}
+import { CameraEvents } from "../data/events";
+import { CameraState, Position } from "../data/types";
+import { CLICK_THRESHOLD, ZOOM_MAX, ZOOM_MIN } from "../data/constants";
+import { Scene } from "../Scene";
 
 export class PixiCameraController {
-  private app: Application;
-  private state: AppState;
-  private renderCallback: () => void;
-  private eventBus: EventBus<EventMap>;
+  private state: CameraState;
 
-  private dragging = false;
-  private lastPointerPos = { x: 0, y: 0 };
-  private cumulativeDragDistance = 0;
-  private dragThreshold = 20;
+  // Touch handling
+  private activePointers: Map<number, Position>;
+  private lastTouchCenter: Position | null;
+  private lastTouchDistance: number | null;
 
-  // For pinch zoom
-  private activePointers: Map<number, { x: number; y: number }> = new Map();
-  private initialPinchDistance: number | null = null;
-  private initialPinchScale: number | null = null;
-  private initialPinchCenter: { x: number; y: number } | null = null;
+  // Panning
+  private isPanning: boolean;
+  private panStart: Position | null;
+  private initialPanStart: Position | null; // Added to track initial pan position
 
   constructor(
-    app: Application,
-    state: AppState,
-    renderCallback: () => void,
-    eventBus: EventBus<EventMap>,
+    private app: Application,
+    initialState: CameraState,
+    private eventBus: EventBus<CameraEvents>,
+    private scene: Scene
   ) {
-    this.app = app;
-    this.state = state;
-    this.renderCallback = renderCallback;
-    this.eventBus = eventBus;
+    this.state = initialState;
 
+    this.activePointers = new Map();
+    this.lastTouchCenter = null;
+    this.lastTouchDistance = null;
+
+    this.isPanning = false;
+    this.panStart = null;
+    this.initialPanStart = null; // Initialize initialPanStart
+
+    this.eventBus.on("camera:moved", (state) => {
+      this.state.offset.x = state.offset.x;
+      this.state.offset.y = state.offset.y;
+      this.state.scale = state.scale;
+    });
+
+    this.setupEvents();
+  }
+
+  private setupEvents() {
+    this.app.stage.interactive = true;
     this.app.stage.on("pointerdown", this.onPointerDown, this);
     this.app.stage.on("pointermove", this.onPointerMove, this);
     this.app.stage.on("pointerup", this.onPointerUp, this);
     this.app.stage.on("pointerupoutside", this.onPointerUp, this);
+    this.app.stage.on("pointercancel", this.onPointerUp, this);
 
-    this.app.canvas.addEventListener("wheel", (e) => this.onWheel(e), {
-      passive: false,
-    });
+    // Wheel for zooming (optional)
+    this.app.canvas.addEventListener("wheel", this.onWheel.bind(this));
   }
 
-  private onPointerDown(e: FederatedPointerEvent) {
-    this.activePointers.set(e.pointerId, { x: e.global.x, y: e.global.y });
+  private onPointerDown(event: FederatedPointerEvent) {
+    const screenPosition = { x: event.global.x, y: event.global.y };
+    const worldPosition = this.scene.screenToWorld(screenPosition);
+    this.activePointers.set(event.pointerId, worldPosition);
+
     if (this.activePointers.size === 1) {
-      // Single pointer: start dragging
-      this.dragging = true;
-      this.lastPointerPos = { x: e.global.x, y: e.global.y };
-      this.cumulativeDragDistance = 0;
+      // Start panning with world coordinates
+      this.isPanning = true;
+      this.panStart = { ...worldPosition };
+      this.initialPanStart = { ...worldPosition };
     } else if (this.activePointers.size === 2) {
-      // Two fingers: start pinch
-      this.initializePinch();
+      // Start pinch zoom
+      const points = Array.from(this.activePointers.values());
+      this.lastTouchCenter = getCenter(points[0], points[1]);
+      this.lastTouchDistance = getDistance(points[0], points[1]);
+
+      // Reset panning state since we're now pinching
+      this.isPanning = false;
+      this.panStart = null;
+      this.initialPanStart = null;
     }
   }
 
-  private onPointerMove(e: FederatedPointerEvent) {
-    if (this.activePointers.has(e.pointerId)) {
-      this.activePointers.set(e.pointerId, { x: e.global.x, y: e.global.y });
-    }
+  private onPointerMove(event: FederatedPointerEvent) {
+    if (!this.activePointers.has(event.pointerId)) return;
 
-    if (this.activePointers.size === 1 && this.dragging) {
-      // Dragging with single pointer
-      const dx = e.global.x - this.lastPointerPos.x;
-      const dy = e.global.y - this.lastPointerPos.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      this.cumulativeDragDistance += dist;
+    const screenPosition = { x: event.global.x, y: event.global.y };
+    const worldPosition = this.scene.screenToWorld(screenPosition);
+    this.activePointers.set(event.pointerId, worldPosition);
 
-      this.state.offset.x -= dx / this.state.cameraScale;
-      this.state.offset.y -= dy / this.state.cameraScale;
+    if (this.activePointers.size === 1 && this.isPanning && this.panStart) {
+      const pointer = Array.from(this.activePointers.values())[0];
+      const delta = {
+        x: pointer.x - this.panStart.x,
+        y: pointer.y - this.panStart.y,
+      };
+      this.pan(delta.x, delta.y);
+      this.panStart = { ...pointer };
+    } else if (this.activePointers.size === 2) {
+      const points = Array.from(this.activePointers.values());
+      const currentCenter = getCenter(points[0], points[1]);
+      const currentDistance = getDistance(points[0], points[1]);
 
-      this.lastPointerPos = { x: e.global.x, y: e.global.y };
-      this.renderCallback();
-      this.emitCameraMoved();
-    } else if (
-      this.activePointers.size === 2 &&
-      this.initialPinchDistance !== null
-    ) {
-      // Pinch to zoom
-      this.handlePinch();
+      if (this.lastTouchCenter !== null && this.lastTouchDistance !== null) {
+        // Calculate the scale factor
+        const scaleFactor = currentDistance / this.lastTouchDistance;
+
+        // Update scale
+        this.zoom(scaleFactor, currentCenter.x, currentCenter.y);
+
+        // Calculate the movement of the center
+        const deltaCenter = {
+          x: currentCenter.x - this.lastTouchCenter.x,
+          y: currentCenter.y - this.lastTouchCenter.y,
+        };
+        this.pan(deltaCenter.x, deltaCenter.y);
+      }
+
+      // Update last positions
+      this.lastTouchCenter = currentCenter;
+      this.lastTouchDistance = currentDistance;
     }
   }
 
-  private onPointerUp(e: FederatedPointerEvent) {
-    this.activePointers.delete(e.pointerId);
+  private onPointerUp(event: FederatedPointerEvent) {
+    const screenPosition = { x: event.global.x, y: event.global.y };
+    const worldPosition = this.scene.screenToWorld(screenPosition);
+    this.activePointers.delete(event.pointerId);
 
-    if (this.activePointers.size === 0) {
-      // No pointers left
-      if (this.dragging) {
-        this.dragging = false;
-        if (this.cumulativeDragDistance < this.dragThreshold) {
-          // This is a click
-          this.eventBus.emit("camera:clicked", e.global.x, e.global.y);
+    if (this.activePointers.size < 2) {
+      this.lastTouchCenter = null;
+      this.lastTouchDistance = null;
+    }
+
+    if (this.activePointers.size === 1) {
+      const remainingPoint = Array.from(this.activePointers.values())[0];
+      this.isPanning = true;
+      this.panStart = { ...remainingPoint };
+      this.initialPanStart = { ...remainingPoint };
+    } else {
+      if (this.isPanning && this.initialPanStart) {
+        const distance = getDistance(this.initialPanStart, worldPosition);
+        if (distance < CLICK_THRESHOLD) {
+          this.eventBus.emit("camera:click", worldPosition.x, worldPosition.y);
         }
       }
-      this.initialPinchDistance = null;
-      this.initialPinchScale = null;
-      this.initialPinchCenter = null;
-    } else if (this.activePointers.size === 1) {
-      // Back to single pointer mode
-      this.initialPinchDistance = null;
-      this.initialPinchScale = null;
-      this.initialPinchCenter = null;
+
+      this.isPanning = false;
+      this.panStart = null;
+      this.initialPanStart = null;
     }
   }
 
-  private onWheel(e: WheelEvent) {
-    e.preventDefault();
+  private onWheel(event: WheelEvent) {
+    event.preventDefault();
 
-    const zoomDelta = e.deltaY > 0 ? -0.1 : 0.1;
+    const scaleAmount = 1 + 0.05 * (event.deltaY > 0 ? -1 : 1);
+    const mousePos = { x: event.offsetX, y: event.offsetY };
+    this.zoom(scaleAmount, mousePos.x, mousePos.y);
+  }
 
-    // Mouse position relative to the canvas
-    const rect = this.app.canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+  private pan(deltaX: number, deltaY: number) {
+    const newState = { ...this.state };
+    newState.offset.x -= deltaX / this.state.scale;
+    newState.offset.y -= deltaY / this.state.scale;
+    this.eventBus.emit("camera:moved", newState);
+  }
 
-    // Convert mouse pos to world coords before zoom
-    const worldXBefore = this.state.offset.x + mouseX / this.state.cameraScale;
-    const worldYBefore = this.state.offset.y + mouseY / this.state.cameraScale;
-
-    // Update scale
+  private zoom(scaleFactor: number, centerX: number, centerY: number) {
+    const newState = { ...this.state };
+    // Limit zoom levels
     const newScale = Math.min(
-      Math.max(this.state.cameraScale + zoomDelta, 0.5),
-      3,
+      Math.max(ZOOM_MIN, this.state.scale * scaleFactor),
+      ZOOM_MAX
     );
-    if (newScale !== this.state.cameraScale) {
-      this.state.cameraScale = newScale;
-      // Adjust offset so worldXBefore, worldYBefore stays under the mouse
-      this.state.offset.x = worldXBefore - mouseX / this.state.cameraScale;
-      this.state.offset.y = worldYBefore - mouseY / this.state.cameraScale;
 
-      this.renderCallback();
-      this.emitCameraMoved();
-    }
+    // Calculate world position before zoom
+    const worldPosBefore = {
+      x: centerX / this.state.scale + this.state.offset.x,
+      y: centerY / this.state.scale + this.state.offset.y,
+    };
+
+    newState.scale = newScale;
+
+    // Calculate world position after zoom
+    const worldPosAfter = {
+      x: centerX / newState.scale + this.state.offset.x,
+      y: centerY / newState.scale + this.state.offset.y,
+    };
+
+    // Adjust offset to keep the zoom centered
+    newState.offset.x += worldPosBefore.x - worldPosAfter.x;
+    newState.offset.y += worldPosBefore.y - worldPosAfter.y;
+
+    this.eventBus.emit("camera:moved", newState);
   }
+}
 
-  private initializePinch() {
-    if (this.activePointers.size === 2) {
-      const pts = Array.from(this.activePointers.values());
-      const [p1, p2] = pts;
-      const dist = Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2);
-      this.initialPinchDistance = dist;
-      this.initialPinchScale = this.state.cameraScale;
+function getCenter(p1: Position, p2: Position): Position {
+  return { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+}
 
-      // Find midpoint in screen coords
-      const midX = (p1.x + p2.x) / 2;
-      const midY = (p1.y + p2.y) / 2;
-
-      // Convert midpoint to world coords
-      const worldX = this.state.offset.x + midX / this.state.cameraScale;
-      const worldY = this.state.offset.y + midY / this.state.cameraScale;
-      this.initialPinchCenter = { x: worldX, y: worldY };
-    }
-  }
-
-  private handlePinch() {
-    if (
-      this.activePointers.size === 2 &&
-      this.initialPinchDistance !== null &&
-      this.initialPinchScale !== null &&
-      this.initialPinchCenter !== null
-    ) {
-      const pts = Array.from(this.activePointers.values());
-      const [p1, p2] = pts;
-      const newDist = Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2);
-
-      const scaleFactor = newDist / (this.initialPinchDistance || 1);
-      const newScale = Math.min(
-        Math.max(this.initialPinchScale * scaleFactor, 0.5),
-        3,
-      );
-
-      if (newScale !== this.state.cameraScale) {
-        // Zoom around initialPinchCenter
-        const midX = (p1.x + p2.x) / 2;
-        const midY = (p1.y + p2.y) / 2;
-
-        const worldXBefore = this.initialPinchCenter.x;
-        const worldYBefore = this.initialPinchCenter.y;
-
-        this.state.cameraScale = newScale;
-        // Adjust offset so that worldXBefore, worldYBefore is still at midpoint of two touches
-        this.state.offset.x = worldXBefore - midX / this.state.cameraScale;
-        this.state.offset.y = worldYBefore - midY / this.state.cameraScale;
-
-        this.renderCallback();
-        this.emitCameraMoved();
-      }
-    }
-  }
-
-  private emitCameraMoved() {
-    const centerX =
-      this.state.offset.x +
-      this.app.renderer.width / (2 * this.state.cameraScale);
-    const centerY =
-      this.state.offset.y +
-      this.app.renderer.height / (2 * this.state.cameraScale);
-    this.eventBus.emit(
-      "camera:moved",
-      centerX,
-      centerY,
-      this.state.cameraScale,
-      this.state.offset.x,
-      this.state.offset.y,
-    );
-  }
-
-  centerOnTile(tileX: number, tileY: number, tileSize: number) {
-    const GRID_SIZE = 50;
-    const view = this.app.renderer.screen;
-    this.state.offset.x =
-      tileX * GRID_SIZE +
-      (tileSize * GRID_SIZE) / 2 -
-      view.width / (2 * this.state.cameraScale);
-    this.state.offset.y =
-      tileY * GRID_SIZE +
-      (tileSize * GRID_SIZE) / 2 -
-      view.height / (2 * this.state.cameraScale);
-    this.renderCallback();
-    this.emitCameraMoved();
-  }
+function getDistance(p1: Position, p2: Position): number {
+  return Math.hypot(p2.x - p1.x, p2.y - p1.y);
 }

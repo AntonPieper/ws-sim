@@ -1,63 +1,49 @@
+import { ToolEvents } from "../data/events";
 import { SelectedTool, TileType } from "../data/types";
+import { EventBus } from "../EventBus";
 
-export type ToolSelectCallback = (tool: SelectedTool) => void;
-
-export class ToolboxUI {
-  private toolboxElement: HTMLElement;
-  private selectedTool: SelectedTool = { type: null, size: 1 };
-  private onToolSelect: ToolSelectCallback;
-
-  constructor(toolboxId: string, onToolSelect: ToolSelectCallback) {
-    const toolbox = document.getElementById(toolboxId);
-    if (!toolbox) {
-      throw new Error(`Toolbox element with ID "${toolboxId}" not found.`);
-    }
-    this.toolboxElement = toolbox;
-    this.onToolSelect = onToolSelect;
-    this.initializeTools();
+export function initializeToolbox(
+  toolboxId: string,
+  eventBus: EventBus<ToolEvents>
+) {
+  const selectedTool: SelectedTool = { type: null, size: 1 };
+  const toolbox = document.getElementById(toolboxId);
+  if (!toolbox) {
+    throw new Error(`Toolbox element with ID "${toolboxId}" not found.`);
   }
+  const toolboxElement = toolbox;
 
-  private initializeTools(): void {
-    this.toolboxElement
-      .querySelectorAll<HTMLElement>(".tool")
-      .forEach((tool) => {
-        tool.addEventListener("click", () => this.selectTool(tool));
+  function initializeTools(): void {
+    for (const tool of toolboxElement.getElementsByClassName("tool")) {
+      tool.addEventListener("click", (e) => {
+        const tool = e.currentTarget as HTMLElement;
+        const type = tool.getAttribute("data-type") as TileType | null;
+        const sizeAttr = tool.getAttribute("data-size");
+        const size = sizeAttr ? parseInt(sizeAttr, 10) : 1;
+        eventBus.emit("tool:select", { type, size });
       });
-  }
-
-  private selectTool(toolElement: HTMLElement): void {
-    this.toolboxElement
-      .querySelectorAll<HTMLElement>(".tool")
-      .forEach((t) => t.classList.remove("selected"));
-
-    toolElement.classList.add("selected");
-
-    const type = toolElement.getAttribute("data-type") as TileType | null;
-    const sizeAttr = toolElement.getAttribute("data-size");
-    const size = sizeAttr ? parseInt(sizeAttr, 10) : 1;
-    this.selectedTool = { type, size };
-
-    this.onToolSelect(this.selectedTool);
-  }
-
-  public selectToolProgrammatically(type: TileType, size: number): void {
-    // Find the tool element that matches type and size
-    const toolElement = Array.from(
-      this.toolboxElement.querySelectorAll(".tool"),
-    ).find(
-      (el) =>
-        el.getAttribute("data-type") === type &&
-        el.getAttribute("data-size") === String(size),
-    );
-    if (toolElement) {
-      this.selectTool(toolElement as HTMLElement);
-    } else {
-      this.selectedTool = { type, size };
-      this.onToolSelect(this.selectedTool);
     }
   }
 
-  getSelectedTool(): SelectedTool {
-    return this.selectedTool;
+  function selectTool(tool: SelectedTool): void {
+    const sizeString = String(tool.size);
+    for (const element of toolboxElement.querySelectorAll<HTMLElement>(
+      ".tool"
+    )) {
+      element.classList.remove("selected");
+      if (
+        element.getAttribute("data-type") === tool.type &&
+        element.getAttribute("data-size") === sizeString
+      ) {
+        element.classList.add("selected");
+      }
+    }
+    selectedTool.size = tool.size;
+    selectedTool.type = tool.type;
   }
+
+  initializeTools();
+  eventBus.on("tool:select", selectTool);
+
+  return selectTool;
 }

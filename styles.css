@@ -31,7 +31,7 @@ canvas {
 }
 
 .selected {
-  border: 2px solid blue;
+  outline: 2px solid blue;
 }
 
 .modal {
@@ -90,7 +90,6 @@ canvas {
 
 /* Highlight selected tool */
 .tool.selected {
-  border: 2px solid blue;
   box-shadow: 0 0 10px rgba(0, 0, 255, 0.5);
 }
 
