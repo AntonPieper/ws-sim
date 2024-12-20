@@ -1,6 +1,5 @@
 import { Application } from "pixi.js";
 import { EventBus, SimpleEventBus } from "./EventBus";
-import { ResizeHandler } from "./ResizeHandler";
 import { Scene } from "./Scene";
 import { PixiCameraController } from "./camera/PixiCameraController";
 import { AppState } from "./data/AppState";
@@ -38,22 +37,28 @@ export class Game {
     this.placementControls = new PlacementControls();
   }
 
-  async start() {
-    await this.app.init({ backgroundColor: 0xf0f0f0 });
+  async start(element?: HTMLCanvasElement | null) {
+    await this.app.init({
+      backgroundColor: 0xf0f0f0,
+      autoDensity: true,
+      canvas: element ?? undefined,
+      resizeTo: window,
+      antialias: true,
+    });
 
     this.app.stage.eventMode = "static";
     this.app.stage.interactive = true;
     this.app.stage.hitArea = this.app.renderer.screen;
 
     document.body.appendChild(this.app.canvas);
-    this.resizeHandler = new ResizeHandler(this.app);
-    this.resizeHandler.register();
+    // this.resizeHandler = new ResizeHandler(this.app);
+    // this.resizeHandler.register();
 
     this.scene = new Scene(
       this.app,
       this.state,
       this.territoryManager,
-      this.cityNameAssigner,
+      this.cityNameAssigner
     );
 
     this.toolboxUI = new ToolboxUI("toolbox", (tool) => {
@@ -72,7 +77,7 @@ export class Game {
         this.state.colorMin = colorMin;
         this.state.colorMax = colorMax;
         this.scene.refreshTiles();
-      },
+      }
     );
 
     this.placementManager = new PlacementManager(
@@ -80,14 +85,14 @@ export class Game {
       this.scene,
       this.placementControls,
       () => this.scene.render(),
-      this.eventBus,
+      this.eventBus
     );
 
     this.cameraController = new PixiCameraController(
       this.app,
       this.state,
       () => this.scene.render(),
-      this.eventBus,
+      this.eventBus
     );
 
     this.placementManager.setCameraController({
@@ -138,7 +143,7 @@ export class Game {
       this.state.placedTiles,
       this.state.cityNames,
       this.state.colorMin,
-      this.state.colorMax,
+      this.state.colorMax
     );
     this.refreshConfigList();
     alert(`Configuration "${configName}" saved successfully!`);
@@ -146,7 +151,7 @@ export class Game {
 
   private loadConfiguration() {
     const configList = document.getElementById(
-      "configList",
+      "configList"
     ) as HTMLSelectElement;
     const selectedConfig = configList.value;
     if (!selectedConfig) {
@@ -161,7 +166,7 @@ export class Game {
       this.state.colorMax = loaded.colorMax;
 
       const bearTrap = this.state.placedTiles.find(
-        (t) => t.type === "bear_trap",
+        (t) => t.type === "bear_trap"
       );
       this.state.bearTrapPosition = bearTrap
         ? {
@@ -173,10 +178,10 @@ export class Game {
       (document.getElementById("cityNamesInput") as HTMLTextAreaElement).value =
         this.state.cityNames.join("\n");
       (document.getElementById("colorMin") as HTMLInputElement).value = String(
-        this.state.colorMin,
+        this.state.colorMin
       );
       (document.getElementById("colorMax") as HTMLInputElement).value = String(
-        this.state.colorMax,
+        this.state.colorMax
       );
 
       this.scene.refreshTiles();
@@ -186,7 +191,7 @@ export class Game {
 
   private deleteConfiguration() {
     const configList = document.getElementById(
-      "configList",
+      "configList"
     ) as HTMLSelectElement;
     const selectedConfig = configList.value;
     if (!selectedConfig) {
@@ -200,7 +205,7 @@ export class Game {
 
   private refreshConfigList() {
     const configList = document.getElementById(
-      "configList",
+      "configList"
     ) as HTMLSelectElement;
     configList.innerHTML =
       '<option value="">-- Select Configuration --</option>';
