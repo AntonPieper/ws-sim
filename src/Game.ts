@@ -60,7 +60,7 @@ export class Game {
       this.state,
       this.eventBus,
       this.territoryManager,
-      this.cityNameAssigner,
+      this.cityNameAssigner
     );
 
     initializeToolbox("toolbox", this.eventBus);
@@ -70,7 +70,7 @@ export class Game {
       this.scene,
       this.placementControls,
       () => this.scene.render(this.state.camera),
-      this.eventBus,
+      this.eventBus
     );
     // TODO: Refactor PlacementManager, so that either it makes sense to create an instance or make it not a class.
     this.placementManager;
@@ -79,7 +79,7 @@ export class Game {
       this.app,
       this.state.camera,
       this.eventBus,
-      this.scene,
+      this.scene
     );
     // TODO: Refactor PixiCameraController, so that either it makes sense to create an instance or make it not a class.
     this.cameraController;
@@ -126,13 +126,13 @@ export class Game {
    */
   private initializeSettingInputs(): void {
     const cityNamesInput = document.getElementById(
-      "cityNamesInput",
+      "cityNamesInput"
     ) as HTMLTextAreaElement;
     const colorMinInput = document.getElementById(
-      "colorMin",
+      "colorMin"
     ) as HTMLInputElement;
     const colorMaxInput = document.getElementById(
-      "colorMax",
+      "colorMax"
     ) as HTMLInputElement;
 
     cityNamesInput.addEventListener("input", (event) => {
@@ -167,10 +167,10 @@ export class Game {
    */
   private initializeSearch(): void {
     const buildingSearchInput = document.getElementById(
-      "buildingSearch",
+      "buildingSearch"
     ) as HTMLInputElement;
     const searchResults = document.getElementById(
-      "searchResults",
+      "searchResults"
     ) as HTMLDivElement;
 
     // Debounce the search input to improve performance
@@ -184,7 +184,7 @@ export class Game {
 
     buildingSearchInput.addEventListener(
       "input",
-      debounce(this.handleSearchInput.bind(this), 100),
+      debounce(this.handleSearchInput.bind(this), 100)
     );
     buildingSearchInput.addEventListener("focus", (event) => {
       this.handleSearchInput(event);
@@ -206,7 +206,7 @@ export class Game {
     const input = event.target as HTMLInputElement;
     const query = input.value.trim();
     const searchResults = document.getElementById(
-      "searchResults",
+      "searchResults"
     ) as HTMLDivElement;
 
     const matches = this.searchManager.search(query);
@@ -239,7 +239,7 @@ export class Game {
    */
   private jumpToBuilding(name: string): void {
     const assignment = this.state.nameAssignmentList.find(
-      (a) => a.name === name,
+      (a) => a.name === name
     );
     if (!assignment) {
       alert(`Building "${name}" not found.`);
@@ -270,7 +270,7 @@ export class Game {
    */
   private saveConfiguration(): void {
     const configNameInput = document.getElementById(
-      "configName",
+      "configName"
     ) as HTMLInputElement;
     const configName = configNameInput.value.trim();
     if (!configName) {
@@ -295,7 +295,7 @@ export class Game {
    */
   private loadConfiguration(): void {
     const configList = document.getElementById(
-      "configList",
+      "configList"
     ) as HTMLSelectElement;
     const selectedConfig = configList.value;
     if (!selectedConfig) {
@@ -311,7 +311,7 @@ export class Game {
       this.state.colorMax = loadedConfig.colorMax;
 
       const bearTrap = this.state.placedTiles.find(
-        (t) => t.type === "bear_trap",
+        (t) => t.type === "bear_trap"
       );
       this.state.bearTrapPosition = bearTrap
         ? {
@@ -323,10 +323,10 @@ export class Game {
       (document.getElementById("cityNamesInput") as HTMLTextAreaElement).value =
         this.state.cityNames.join("\n");
       (document.getElementById("colorMin") as HTMLInputElement).value = String(
-        this.state.colorMin,
+        this.state.colorMin
       );
       (document.getElementById("colorMax") as HTMLInputElement).value = String(
-        this.state.colorMax,
+        this.state.colorMax
       );
 
       this.scene.render(this.state.camera);
@@ -339,7 +339,7 @@ export class Game {
    */
   private deleteConfiguration(): void {
     const configList = document.getElementById(
-      "configList",
+      "configList"
     ) as HTMLSelectElement;
     const selectedConfig = configList.value;
     if (!selectedConfig) {
@@ -356,7 +356,7 @@ export class Game {
    */
   private exportConfiguration(): void {
     const configList = document.getElementById(
-      "configList",
+      "configList"
     ) as HTMLSelectElement;
     const selectedConfig = configList.value;
     if (!selectedConfig) {
@@ -385,7 +385,7 @@ export class Game {
    */
   private importConfiguration(): void {
     const importInput = document.getElementById(
-      "importConfigInput",
+      "importConfigInput"
     ) as HTMLInputElement;
     importInput.value = ""; // Reset the input
     importInput.click();
@@ -406,14 +406,12 @@ export class Game {
     reader.onload = () => {
       try {
         const content = reader.result as string;
-        const config: Configuration = JSON.parse(content);
-
         // Optional: Validate the configuration structure here
 
         // Ask user for config name
         const configName = prompt(
           "Enter a name for the imported configuration:",
-          file.name.replace(/\.[^/.]+$/, ""),
+          file.name.replace(/\.[^/.]+$/, "")
         );
 
         if (!configName) {
@@ -425,7 +423,7 @@ export class Game {
         const existingConfigs = ConfigurationManager.listConfigurations();
         if (existingConfigs.includes(configName)) {
           const overwrite = confirm(
-            `Configuration "${configName}" already exists. Overwrite?`,
+            `Configuration "${configName}" already exists. Overwrite?`
           );
           if (!overwrite) {
             alert("Import cancelled: Configuration name already exists.");
@@ -435,20 +433,20 @@ export class Game {
 
         const success = ConfigurationManager.importConfiguration(
           configName,
-          content,
+          content
         );
         if (success) {
           this.refreshConfigList();
           alert(`Configuration "${configName}" imported successfully!`);
         } else {
           alert(
-            "Failed to import configuration. Please ensure the file is valid.",
+            "Failed to import configuration. Please ensure the file is valid."
           );
         }
       } catch (error) {
         console.error("Error importing configuration:", error);
         alert(
-          "Failed to import configuration. Please ensure the file is valid.",
+          "Failed to import configuration. Please ensure the file is valid."
         );
       }
     };
@@ -460,7 +458,7 @@ export class Game {
    */
   private refreshConfigList(): void {
     const configList = document.getElementById(
-      "configList",
+      "configList"
     ) as HTMLSelectElement;
     configList.innerHTML =
       '<option value="">-- Select Configuration --</option>';
