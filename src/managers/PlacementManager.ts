@@ -20,7 +20,7 @@ export class PlacementManager {
     scene: Scene,
     placementControls: PlacementControls,
     renderCallback: () => void,
-    eventBus: EventBus<PlacementEvents>
+    eventBus: EventBus<PlacementEvents>,
   ) {
     this.state = state;
     this.scene = scene;
@@ -41,7 +41,7 @@ export class PlacementManager {
       this.placementControls.show(
         this.canPlaceTile(this.state.previewTile),
         () => this.finalizePlacement(),
-        () => this.cancelPlacementMode()
+        () => this.cancelPlacementMode(),
       );
       this.renderCallback();
     } else {
@@ -77,7 +77,7 @@ export class PlacementManager {
         tile.x < existing.x + existing.size &&
         tile.x + tile.size > existing.x &&
         tile.y < existing.y + existing.size &&
-        tile.y + tile.size > existing.y
+        tile.y + tile.size > existing.y,
     );
   }
 
@@ -129,10 +129,10 @@ export class PlacementManager {
     const centerX = this.state.camera.offset.x;
     const centerY = this.state.camera.offset.y;
     const gx = Math.round(
-      centerX / GRID_SIZE - this.state.selectedTool.size / 2
+      centerX / GRID_SIZE - this.state.selectedTool.size / 2,
     );
     const gy = Math.round(
-      centerY / GRID_SIZE - this.state.selectedTool.size / 2
+      centerY / GRID_SIZE - this.state.selectedTool.size / 2,
     );
 
     this.state.previewTile = {
@@ -143,7 +143,7 @@ export class PlacementManager {
     };
 
     this.placementControls.updateConfirmState(
-      this.canPlaceTile(this.state.previewTile)
+      this.canPlaceTile(this.state.previewTile),
     );
     this.renderCallback();
   }
@@ -154,7 +154,7 @@ export class PlacementManager {
         gx >= tile.x &&
         gx < tile.x + tile.size &&
         gy >= tile.y &&
-        gy < tile.y + tile.size
+        gy < tile.y + tile.size,
     );
   }
 

@@ -4,7 +4,7 @@ import { EventBus } from "../EventBus";
 
 export function initializeToolbox(
   toolboxId: string,
-  eventBus: EventBus<ToolEvents>
+  eventBus: EventBus<ToolEvents>,
 ) {
   const selectedTool: SelectedTool = { type: null, size: 1 };
   const toolbox = document.getElementById(toolboxId);
@@ -28,7 +28,7 @@ export function initializeToolbox(
   function selectTool(tool: SelectedTool): void {
     const sizeString = String(tool.size);
     for (const element of toolboxElement.querySelectorAll<HTMLElement>(
-      ".tool"
+      ".tool",
     )) {
       element.classList.remove("selected");
       if (

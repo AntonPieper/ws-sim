@@ -40,7 +40,7 @@ export class PixiCameraController {
     private app: Application,
     private camera: CameraState,
     private eventBus: EventBus<CameraEvents>,
-    private scene: Scene
+    private scene: Scene,
   ) {
     this.setupEvents();
   }
@@ -58,6 +58,7 @@ export class PixiCameraController {
     // Pointer Down
     // ----------------------------------------------------------------
     this.app.stage.on("pointerdown", (event: FederatedPointerEvent) => {
+      event.preventDefault();
       const pointerId = event.pointerId ?? 0;
       const { x, y } = event.global;
 
@@ -80,6 +81,7 @@ export class PixiCameraController {
     // Pointer Move
     // ----------------------------------------------------------------
     this.app.stage.on("pointermove", (event: FederatedPointerEvent) => {
+      event.preventDefault();
       const pointerId = event.pointerId ?? 0;
       if (!this.pointers.has(pointerId)) return;
 
@@ -115,7 +117,7 @@ export class PixiCameraController {
     // ----------------------------------------------------------------
     this.app.stage.on("pointerup", (event) => this.handlePointerUp(event));
     this.app.stage.on("pointerupoutside", (event) =>
-      this.handlePointerUp(event)
+      this.handlePointerUp(event),
     );
     this.app.stage.on("pointercancel", (event) => this.handlePointerUp(event));
 
@@ -129,7 +131,7 @@ export class PixiCameraController {
         const zoomDelta = event.deltaY < 0 ? 1 + ZOOM_SPEED : 1 - ZOOM_SPEED;
         this.applyZoom(zoomDelta, event.global.x, event.global.y);
       },
-      { passive: false }
+      { passive: false },
     );
   }
 
