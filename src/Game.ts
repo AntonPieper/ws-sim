@@ -95,6 +95,17 @@ export class Game {
       .getElementById("deleteConfig")!
       .addEventListener("click", () => this.deleteConfiguration());
 
+    // New Event listeners for export/import
+    document
+      .getElementById("exportConfig")!
+      .addEventListener("click", () => this.exportConfiguration());
+    document
+      .getElementById("importConfig")!
+      .addEventListener("click", () => this.importConfiguration());
+    document
+      .getElementById("importConfigInput")!
+      .addEventListener("change", (event) => this.handleImportFile(event));
+
     // Event listener for toggling config panel
     document
       .getElementById("toggleConfigPanel")!
@@ -338,6 +349,110 @@ export class Game {
     ConfigurationManager.deleteConfiguration(selectedConfig);
     this.refreshConfigList();
     alert(`Configuration "${selectedConfig}" deleted successfully!`);
+  }
+
+  /**
+   * Exports the selected configuration as a JSON file.
+   */
+  private exportConfiguration(): void {
+    const configList = document.getElementById(
+      "configList",
+    ) as HTMLSelectElement;
+    const selectedConfig = configList.value;
+    if (!selectedConfig) {
+      alert("Please select a configuration to export.");
+      return;
+    }
+
+    const exportedConfig =
+      ConfigurationManager.exportConfiguration(selectedConfig);
+    if (!exportedConfig) {
+      alert(`Failed to export configuration "${selectedConfig}".`);
+      return;
+    }
+
+    const blob = new Blob([exportedConfig], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${selectedConfig}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Initiates the import configuration process by triggering the file input.
+   */
+  private importConfiguration(): void {
+    const importInput = document.getElementById(
+      "importConfigInput",
+    ) as HTMLInputElement;
+    importInput.value = ""; // Reset the input
+    importInput.click();
+  }
+
+  /**
+   * Handles the file selected for importing a configuration.
+   * @param event The change event from the file input.
+   */
+  private handleImportFile(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) {
+      return;
+    }
+
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const content = reader.result as string;
+        const config: Configuration = JSON.parse(content);
+
+        // Optional: Validate the configuration structure here
+
+        // Ask user for config name
+        const configName = prompt(
+          "Enter a name for the imported configuration:",
+          file.name.replace(/\.[^/.]+$/, ""),
+        );
+
+        if (!configName) {
+          alert("Import cancelled: No configuration name provided.");
+          return;
+        }
+
+        // Check if config name already exists
+        const existingConfigs = ConfigurationManager.listConfigurations();
+        if (existingConfigs.includes(configName)) {
+          const overwrite = confirm(
+            `Configuration "${configName}" already exists. Overwrite?`,
+          );
+          if (!overwrite) {
+            alert("Import cancelled: Configuration name already exists.");
+            return;
+          }
+        }
+
+        const success = ConfigurationManager.importConfiguration(
+          configName,
+          content,
+        );
+        if (success) {
+          this.refreshConfigList();
+          alert(`Configuration "${configName}" imported successfully!`);
+        } else {
+          alert(
+            "Failed to import configuration. Please ensure the file is valid.",
+          );
+        }
+      } catch (error) {
+        console.error("Error importing configuration:", error);
+        alert(
+          "Failed to import configuration. Please ensure the file is valid.",
+        );
+      }
+    };
+    reader.readAsText(file);
   }
 
   /**

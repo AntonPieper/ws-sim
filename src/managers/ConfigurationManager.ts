@@ -70,6 +70,38 @@ export class ConfigurationManager {
     );
   }
 
+  /**
+   * Exports a configuration as a formatted JSON string.
+   * @param configName The name of the configuration to export.
+   * @returns A JSON string of the configuration or null if not found.
+   */
+  static exportConfiguration(configName: string): string | null {
+    const configs = this.getAllConfigurations();
+    const config = configs[configName];
+    if (config) {
+      return JSON.stringify(config, null, 2); // Pretty-print with 2 spaces
+    }
+    return null;
+  }
+
+  /**
+   * Imports a configuration from a JSON string.
+   * @param configName The name to assign to the imported configuration.
+   * @param configJson The JSON string representing the configuration.
+   * @returns True if import was successful, false otherwise.
+   */
+  static importConfiguration(configName: string, configJson: string): boolean {
+    try {
+      const config: Configuration = JSON.parse(configJson);
+      // Optional: Validate the configuration structure here
+      this.saveConfiguration(configName, config);
+      return true;
+    } catch (error) {
+      console.error("Failed to import configuration:", error);
+      return false;
+    }
+  }
+
   private static getAllConfigurations(): TileConfigs {
     return JSON.parse(
       localStorage.getItem(ConfigurationManager.storageKey) || "{}",
