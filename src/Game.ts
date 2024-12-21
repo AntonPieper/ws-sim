@@ -80,6 +80,7 @@ export class Game {
       () => this.scene.render(this.state.camera),
       this.eventBus
     );
+    this.placementManager;
 
     this.cameraController = new PixiCameraController(
       this.app,
@@ -87,6 +88,7 @@ export class Game {
       this.eventBus,
       this.scene
     );
+    this.cameraController;
 
     // The rest of your Game logic like config load/save stays the same
 

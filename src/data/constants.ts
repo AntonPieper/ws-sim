@@ -2,8 +2,11 @@ export const GRID_SIZE = 50;
 export const DEFAULT_COLOR_SCALE_MIN = 2;
 export const DEFAULT_COLOR_SCALE_MAX = 6;
 
-export const ZOOM_MIN = 0.1;
-export const ZOOM_MAX = 5;
+export const PAN_SPEED = 1;
+export const ZOOM_SPEED = 0.1;
+export const MIN_ZOOM = 0.2;
+export const MAX_ZOOM = 5;
+
 // Define a click threshold in pixels
 export const CLICK_THRESHOLD = 10;
 

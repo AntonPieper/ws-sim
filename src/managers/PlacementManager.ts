@@ -103,8 +103,8 @@ export class PlacementManager {
 
         this.state.previewTile = { ...clickedTile };
         console.log(clickedTile);
-        this.eventBus.emit("camera:moved", {
-          offset: this.scene.tileToScreen({
+        this.eventBus.emit("camera:move", {
+          offset: this.scene.tileToWorld({
             x: clickedTile.x + clickedTile.size / 2,
             y: clickedTile.y + clickedTile.size / 2,
           }),

@@ -13,6 +13,7 @@ export interface ModalEvents {
 }
 
 export interface CameraEvents {
+  "camera:move"(cameraState: CameraState): void;
   "camera:moved"(cameraState: CameraState): void;
   "camera:click"(globalX: number, globalY: number): void;
 }
