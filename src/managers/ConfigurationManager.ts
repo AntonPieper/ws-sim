@@ -11,32 +11,31 @@ interface TileConfigs {
   [key: string]: TileConfig;
 }
 
-export class ConfigurationManager {
-  private storageKey = "tileConfigs";
+export interface Configuration {
+  placedTiles: Tile[];
+  cityNames: string[];
+  colorMin: number;
+  colorMax: number;
+}
 
-  saveConfiguration(
-    configName: string,
-    placedTiles: Tile[],
-    cityNames: string[],
-    colorMin: number,
-    colorMax: number
-  ) {
+export class ConfigurationManager {
+  private static storageKey = "tileConfigs";
+
+  static saveConfiguration(configName: string, config: Configuration) {
     const configs = this.getAllConfigurations();
-    configs[configName] = {
-      placedTiles: placedTiles,
-      cityNames,
-      colorMin,
-      colorMax,
-    };
-    localStorage.setItem(this.storageKey, JSON.stringify(configs));
+    configs[configName] = config;
+    localStorage.setItem(
+      ConfigurationManager.storageKey,
+      JSON.stringify(configs),
+    );
   }
 
-  listConfigurations(): string[] {
+  static listConfigurations(): string[] {
     const configs = this.getAllConfigurations();
     return Object.keys(configs);
   }
 
-  loadConfiguration(configName: string): {
+  static loadConfiguration(configName: string): {
     tiles: Tile[];
     cityNames: string[];
     colorMin: number;
@@ -49,13 +48,7 @@ export class ConfigurationManager {
         // Backwards compatibility
         config.placedTiles = JSON.parse(config.placedTiles);
         // Save the updated config
-        this.saveConfiguration(
-          configName,
-          config.placedTiles,
-          config.cityNames,
-          config.colorMin,
-          config.colorMax
-        );
+        this.saveConfiguration(configName, config);
       }
       const loadedTiles: Tile[] = config.placedTiles;
       return {
@@ -68,13 +61,18 @@ export class ConfigurationManager {
     return null;
   }
 
-  deleteConfiguration(configName: string) {
+  static deleteConfiguration(configName: string) {
     const configs = this.getAllConfigurations();
     delete configs[configName];
-    localStorage.setItem(this.storageKey, JSON.stringify(configs));
+    localStorage.setItem(
+      ConfigurationManager.storageKey,
+      JSON.stringify(configs),
+    );
   }
 
-  private getAllConfigurations(): TileConfigs {
-    return JSON.parse(localStorage.getItem(this.storageKey) || "{}");
+  private static getAllConfigurations(): TileConfigs {
+    return JSON.parse(
+      localStorage.getItem(ConfigurationManager.storageKey) || "{}",
+    );
   }
 }

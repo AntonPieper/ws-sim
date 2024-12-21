@@ -1,4 +1,4 @@
-import { Tile, Position } from "../data/types";
+import { Tile, Position, NameAssignment } from "../data/types";
 import { calculateDistance } from "../utils/utils";
 
 export class CityNameAssigner {
@@ -7,7 +7,7 @@ export class CityNameAssigner {
     cityNames: string[],
     bearTrapPosition: Position | null,
   ) {
-    const assignments: Record<string, string> = {};
+    const assignments: Record<string, NameAssignment> = {};
     if (!bearTrapPosition) return assignments;
 
     const cities = placedTiles.filter((t) => t.type === "city");
@@ -29,7 +29,10 @@ export class CityNameAssigner {
 
     cities.forEach((city, index) => {
       if (index < cityNames.length) {
-        assignments[`${city.x},${city.y}`] = cityNames[index];
+        assignments[`${city.x},${city.y}`] = {
+          name: cityNames[index],
+          position: { x: city.x, y: city.y },
+        };
       }
     });
 

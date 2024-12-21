@@ -95,7 +95,7 @@ function drawSingleTile(
   // Add building label
   const label =
     tile.type === "city" && state.nameAssignments[`${tile.x},${tile.y}`]
-      ? state.nameAssignments[`${tile.x},${tile.y}`]
+      ? state.nameAssignments[`${tile.x},${tile.y}`].name
       : tile.type || "";
 
   const labelText = new Text({

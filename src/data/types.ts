@@ -11,6 +11,11 @@ export interface Position {
   y: number;
 }
 
+export interface NameAssignment {
+  name: string;
+  position: Position;
+}
+
 export interface Tile {
   x: number;
   y: number;
