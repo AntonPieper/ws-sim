@@ -22,3 +22,8 @@ export interface SelectedTool {
   type: TileType | null;
   size: number;
 }
+
+export interface CameraState {
+  offset: Position;
+  scale: number;
+}

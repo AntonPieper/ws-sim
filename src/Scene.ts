@@ -5,31 +5,24 @@ import { CityNameAssigner } from "./managers/CityNameAssigner";
 import { TerritoryManager } from "./managers/TerritoryManager";
 import { drawPreviewTile, drawTiles } from "./rendering/drawTiles";
 import { createGrid } from "./rendering/GridRenderer";
+import { EventBus } from "./EventBus";
+import { CameraEvents } from "./data/events";
+import { CameraState, Position } from "./data/types";
 
 export class Scene {
-  public app: Application;
-  private state: AppState;
-
   private cameraContainer: Container;
   private gridContainer: Container;
   private zoneContainer: Container;
   private tilesContainer: Container;
   private previewContainer: Container;
 
-  private territoryManager: TerritoryManager;
-  private cityNameAssigner: CityNameAssigner;
-
   constructor(
-    app: Application,
-    state: AppState,
-    territoryManager: TerritoryManager,
-    cityNameAssigner: CityNameAssigner,
+    private app: Application,
+    private state: AppState,
+    private eventBus: EventBus<CameraEvents>,
+    private territoryManager: TerritoryManager,
+    private cityNameAssigner: CityNameAssigner
   ) {
-    this.app = app;
-    this.state = state;
-    this.territoryManager = territoryManager;
-    this.cityNameAssigner = cityNameAssigner;
-
     this.cameraContainer = new Container();
     this.gridContainer = createGrid();
     this.zoneContainer = new Container();
@@ -40,22 +33,54 @@ export class Scene {
       this.gridContainer,
       this.zoneContainer,
       this.tilesContainer,
-      this.previewContainer,
+      this.previewContainer
     );
     this.app.stage.addChild(this.cameraContainer);
+
+    this.eventBus.on("camera:moved", this.render.bind(this));
   }
 
-  public render() {
+  public screenToWorld(position: Position): Position {
+    return this.cameraContainer.toLocal(position);
+  }
+
+  public worldToScreen(position: Position): Position {
+    return this.cameraContainer.toGlobal(position);
+  }
+
+  public tileToWorld(tilePosition: Position): Position {
+    return {
+      x: tilePosition.x * GRID_SIZE,
+      y: tilePosition.y * GRID_SIZE,
+    };
+  }
+
+  public worldToTile(worldPosition: Position): Position {
+    return {
+      x: worldPosition.x / GRID_SIZE,
+      y: worldPosition.y / GRID_SIZE,
+    };
+  }
+
+  public tileToScreen(tilePosition: Position): Position {
+    return this.worldToScreen(this.tileToWorld(tilePosition));
+  }
+
+  public screenToTile(globalPosition: Position): Position {
+    return this.worldToTile(this.screenToWorld(globalPosition));
+  }
+
+  public render(camera: CameraState) {
     this.cameraContainer.position.set(
-      -this.state.offset.x * this.state.cameraScale,
-      -this.state.offset.y * this.state.cameraScale,
+      -camera.offset.x * camera.scale + this.app.screen.width / 2,
+      -camera.offset.y * camera.scale + this.app.screen.height / 2
     );
-    this.cameraContainer.scale.set(this.state.cameraScale);
+    this.cameraContainer.scale.set(camera.scale);
 
     this.zoneContainer.removeChildren();
     const zones = this.territoryManager.computeBannerZones(
       this.state.placedTiles,
-      this.state.previewTile ?? undefined,
+      this.state.previewTile ?? undefined
     );
 
     // Draw zone overlays
@@ -81,7 +106,7 @@ export class Scene {
     this.state.nameAssignments = this.cityNameAssigner.assignNames(
       this.state.placedTiles,
       this.state.cityNames,
-      this.state.bearTrapPosition,
+      this.state.bearTrapPosition
     );
     drawTiles(this.tilesContainer, this.state, zones);
 
@@ -89,8 +114,5 @@ export class Scene {
     if (this.state.isInPlacementMode && this.state.previewTile) {
       drawPreviewTile(this.previewContainer, this.state, zones);
     }
-  }
-  public refreshTiles() {
-    this.render();
   }
 }

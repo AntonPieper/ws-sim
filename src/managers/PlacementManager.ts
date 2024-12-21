@@ -1,36 +1,26 @@
 import { AppState } from "../data/AppState";
 import { Scene } from "../Scene";
 import { PlacementControls } from "../ui/PlacementControls";
-import { Tile, TileType } from "../data/types";
+import { SelectedTool, Tile } from "../data/types";
 import { GRID_SIZE } from "../data/constants";
 import { EventBus } from "../EventBus";
+import { CameraEvents, ToolEvents } from "../data/events";
 
-interface EventMap {
-  "camera:moved": () => void;
-  "camera:clicked": (globalX: number, globalY: number) => void;
-  "tool:selected": (type: TileType | null, size: number) => void;
-}
+interface PlacementEvents extends CameraEvents, ToolEvents {}
 
 export class PlacementManager {
   private state: AppState;
   private scene: Scene;
   private placementControls: PlacementControls;
   private renderCallback: () => void;
-  private eventBus: EventBus<EventMap>;
-
-  private cameraController!: {
-    centerOnTile: (tileX: number, tileY: number, tileSize: number) => void;
-  };
-  private toolbox!: {
-    selectToolProgrammatically: (type: TileType, size: number) => void;
-  };
+  private eventBus: EventBus<PlacementEvents>;
 
   constructor(
     state: AppState,
     scene: Scene,
     placementControls: PlacementControls,
     renderCallback: () => void,
-    eventBus: EventBus<EventMap>,
+    eventBus: EventBus<PlacementEvents>
   ) {
     this.state = state;
     this.scene = scene;
@@ -38,23 +28,12 @@ export class PlacementManager {
     this.renderCallback = renderCallback;
     this.eventBus = eventBus;
 
-    this.eventBus.on("camera:clicked", this.onCameraClicked.bind(this));
+    this.eventBus.on("camera:click", this.onCameraClicked.bind(this));
     this.eventBus.on("camera:moved", this.onCameraMoved.bind(this));
+    this.eventBus.on("tool:select", this.startPlacementMode.bind(this));
   }
 
-  public setCameraController(cameraController: {
-    centerOnTile: (tileX: number, tileY: number, tileSize: number) => void;
-  }) {
-    this.cameraController = cameraController;
-  }
-
-  public setToolbox(toolbox: {
-    selectToolProgrammatically: (type: TileType, size: number) => void;
-  }) {
-    this.toolbox = toolbox;
-  }
-
-  startPlacementMode(toolSelected: { type: TileType | null; size: number }) {
+  startPlacementMode(toolSelected: SelectedTool) {
     this.state.selectedTool = toolSelected;
     if (toolSelected.type !== "eraser") {
       this.state.isInPlacementMode = true;
@@ -62,7 +41,7 @@ export class PlacementManager {
       this.placementControls.show(
         this.canPlaceTile(this.state.previewTile),
         () => this.finalizePlacement(),
-        () => this.cancelPlacementMode(),
+        () => this.cancelPlacementMode()
       );
       this.renderCallback();
     } else {
@@ -98,40 +77,39 @@ export class PlacementManager {
         tile.x < existing.x + existing.size &&
         tile.x + tile.size > existing.x &&
         tile.y < existing.y + existing.size &&
-        tile.y + tile.size > existing.y,
+        tile.y + tile.size > existing.y
     );
   }
 
-  private onCameraClicked(globalX: number, globalY: number) {
+  private onCameraClicked(screenX: number, screenY: number) {
     if (!this.state.isInPlacementMode) {
-      const localPos = this.scene["cameraContainer"].toLocal({
-        x: globalX,
-        y: globalY,
+      const pos = this.scene.screenToTile({
+        x: screenX,
+        y: screenY,
       });
-      const gx = Math.floor(localPos.x / GRID_SIZE);
-      const gy = Math.floor(localPos.y / GRID_SIZE);
 
-      const clickedTileIndex = this.findTileAt(gx, gy);
+      const clickedTileIndex = this.findTileAt(pos.x, pos.y);
       const clickedTile = this.popTile(clickedTileIndex);
       if (clickedTile && clickedTile.type !== "eraser") {
         this.state.selectedTool = {
           type: clickedTile.type,
           size: clickedTile.size,
         };
-        this.toolbox.selectToolProgrammatically(
-          clickedTile.type,
-          clickedTile.size,
-        );
-
         this.state.isInPlacementMode = true;
+        this.eventBus.emit("tool:select", {
+          type: clickedTile.type,
+          size: clickedTile.size,
+        });
+
         this.state.previewTile = { ...clickedTile };
-
-        this.cameraController.centerOnTile(
-          clickedTile.x,
-          clickedTile.y,
-          clickedTile.size,
-        );
-
+        console.log(clickedTile);
+        this.eventBus.emit("camera:move", {
+          offset: this.scene.tileToWorld({
+            x: clickedTile.x + clickedTile.size / 2,
+            y: clickedTile.y + clickedTile.size / 2,
+          }),
+          scale: this.state.camera.scale,
+        });
         this.renderCallback();
       }
     } else {
@@ -148,16 +126,13 @@ export class PlacementManager {
   private updatePreviewTilePosition() {
     if (!this.state.isInPlacementMode || !this.state.selectedTool.type) return;
 
-    const view = this.scene["app"].renderer.screen;
-    const centerX =
-      view.width / 2 / this.state.cameraScale + this.state.offset.x;
-    const centerY =
-      view.height / 2 / this.state.cameraScale + this.state.offset.y;
-    const gx = Math.floor(
-      centerX / GRID_SIZE - this.state.selectedTool.size / 2,
+    const centerX = this.state.camera.offset.x;
+    const centerY = this.state.camera.offset.y;
+    const gx = Math.round(
+      centerX / GRID_SIZE - this.state.selectedTool.size / 2
     );
-    const gy = Math.floor(
-      centerY / GRID_SIZE - this.state.selectedTool.size / 2,
+    const gy = Math.round(
+      centerY / GRID_SIZE - this.state.selectedTool.size / 2
     );
 
     this.state.previewTile = {
@@ -168,7 +143,7 @@ export class PlacementManager {
     };
 
     this.placementControls.updateConfirmState(
-      this.canPlaceTile(this.state.previewTile),
+      this.canPlaceTile(this.state.previewTile)
     );
     this.renderCallback();
   }
@@ -179,7 +154,7 @@ export class PlacementManager {
         gx >= tile.x &&
         gx < tile.x + tile.size &&
         gy >= tile.y &&
-        gy < tile.y + tile.size,
+        gy < tile.y + tile.size
     );
   }
 

@@ -3,20 +3,19 @@ import { EventBus, SimpleEventBus } from "./EventBus";
 import { Scene } from "./Scene";
 import { PixiCameraController } from "./camera/PixiCameraController";
 import { AppState } from "./data/AppState";
-import { TileType } from "./data/types";
+import { AllEvents } from "./data/events";
 import { CityNameAssigner } from "./managers/CityNameAssigner";
 import { ConfigurationManager } from "./managers/ConfigManager";
 import { PlacementManager } from "./managers/PlacementManager";
 import { TerritoryManager } from "./managers/TerritoryManager";
 import { ModalManager } from "./ui/ModalManager";
 import { PlacementControls } from "./ui/PlacementControls";
-import { ToolboxUI } from "./ui/ToolboxUI";
+import { initializeToolbox } from "./ui/ToolboxUI";
 
 export class Game {
   private app: Application;
   private scene!: Scene;
   private state: AppState;
-  private toolboxUI!: ToolboxUI;
   private modalManager!: ModalManager;
   private configManager: ConfigurationManager;
   private cityNameAssigner: CityNameAssigner;
@@ -24,9 +23,8 @@ export class Game {
   private placementManager!: PlacementManager;
   private placementControls: PlacementControls;
   private cameraController!: PixiCameraController;
-  private resizeHandler!: ResizeHandler;
 
-  private eventBus: EventBus = new SimpleEventBus();
+  private eventBus: EventBus<AllEvents> = new SimpleEventBus();
 
   constructor() {
     this.app = new Application();
@@ -41,6 +39,7 @@ export class Game {
     await this.app.init({
       backgroundColor: 0xf0f0f0,
       autoDensity: true,
+      resolution: window.devicePixelRatio || 1,
       canvas: element ?? undefined,
       resizeTo: window,
       antialias: true,
@@ -51,22 +50,16 @@ export class Game {
     this.app.stage.hitArea = this.app.renderer.screen;
 
     document.body.appendChild(this.app.canvas);
-    // this.resizeHandler = new ResizeHandler(this.app);
-    // this.resizeHandler.register();
 
     this.scene = new Scene(
       this.app,
       this.state,
+      this.eventBus,
       this.territoryManager,
       this.cityNameAssigner
     );
 
-    this.toolboxUI = new ToolboxUI("toolbox", (tool) => {
-      // tool selected from UI emits event for tool selection
-      // Or we can call placementManager startPlacementMode directly.
-      // Better: emit event "tool:selected"
-      this.eventBus.emit("tool:selected", tool.type, tool.size);
-    });
+    initializeToolbox("toolbox", this.eventBus);
 
     this.modalManager = new ModalManager(
       "nameModal",
@@ -76,7 +69,7 @@ export class Game {
         this.state.cityNames = cityNames;
         this.state.colorMin = colorMin;
         this.state.colorMax = colorMax;
-        this.scene.refreshTiles();
+        this.scene.render(this.state.camera);
       }
     );
 
@@ -84,32 +77,18 @@ export class Game {
       this.state,
       this.scene,
       this.placementControls,
-      () => this.scene.render(),
+      () => this.scene.render(this.state.camera),
       this.eventBus
     );
+    this.placementManager;
 
     this.cameraController = new PixiCameraController(
       this.app,
-      this.state,
-      () => this.scene.render(),
-      this.eventBus
+      this.state.camera,
+      this.eventBus,
+      this.scene
     );
-
-    this.placementManager.setCameraController({
-      centerOnTile: (x, y, size) =>
-        this.cameraController.centerOnTile(x, y, size),
-    });
-    this.placementManager.setToolbox({
-      selectToolProgrammatically: (type, size) => {
-        // Toolbox UI can also respond to this event or we can call a method on toolboxUI directly.
-        this.toolboxUI.selectToolProgrammatically(type, size);
-      },
-    });
-
-    // When a tool is selected via UI:
-    this.eventBus.on("tool:selected", (type: TileType | null, size: number) => {
-      this.placementManager.startPlacementMode({ type, size });
-    });
+    this.cameraController;
 
     // The rest of your Game logic like config load/save stays the same
 
@@ -126,7 +105,7 @@ export class Game {
       .getElementById("deleteConfig")!
       .addEventListener("click", () => this.deleteConfiguration());
 
-    this.scene.render();
+    this.scene.render(this.state.camera);
     this.refreshConfigList();
   }
 
@@ -184,8 +163,7 @@ export class Game {
         this.state.colorMax
       );
 
-      this.scene.refreshTiles();
-      this.scene.render();
+      this.scene.render(this.state.camera);
     }
   }
 
