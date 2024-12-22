@@ -1,3 +1,7 @@
+import {
+  DEFAULT_COLOR_SCALE_MAX,
+  DEFAULT_COLOR_SCALE_MIN,
+} from "../data/constants";
 import { Tile } from "../data/types";
 
 interface TileConfig {
@@ -23,6 +27,8 @@ export class ConfigurationManager {
 
   static saveConfiguration(configName: string, config: Configuration) {
     const configs = this.getAllConfigurations();
+    config.colorMin ??= DEFAULT_COLOR_SCALE_MIN;
+    config.colorMax ??= DEFAULT_COLOR_SCALE_MAX;
     configs[configName] = config;
     localStorage.setItem(
       ConfigurationManager.storageKey,
@@ -43,22 +49,33 @@ export class ConfigurationManager {
   } | null {
     const configs = this.getAllConfigurations();
     const config = configs[configName];
-    if (config) {
-      if (typeof config.placedTiles === "string") {
-        // Backwards compatibility
-        config.placedTiles = JSON.parse(config.placedTiles);
-        // Save the updated config
-        this.saveConfiguration(configName, config);
-      }
-      const loadedTiles: Tile[] = config.placedTiles;
-      return {
-        tiles: loadedTiles,
-        cityNames: config.cityNames,
-        colorMin: config.colorMin,
-        colorMax: config.colorMax,
-      };
+    if (config === undefined) {
+      return null;
     }
-    return null;
+    this.backwardsCompatibility(configName, config);
+    const loadedTiles: Tile[] = config.placedTiles;
+    return {
+      tiles: loadedTiles,
+      cityNames: config.cityNames,
+      colorMin: config.colorMin,
+      colorMax: config.colorMax,
+    };
+  }
+
+  private static backwardsCompatibility(
+    configName: string,
+    config: TileConfig,
+  ) {
+    // Set default values if not present
+    config.colorMin ??= DEFAULT_COLOR_SCALE_MIN;
+    config.colorMax ??= DEFAULT_COLOR_SCALE_MAX;
+    // Convert string to JSON if needed
+    if (typeof config.placedTiles === "string") {
+      // Backwards compatibility
+      config.placedTiles = JSON.parse(config.placedTiles);
+      // Save the updated config
+      this.saveConfiguration(configName, config);
+    }
   }
 
   static deleteConfiguration(configName: string) {

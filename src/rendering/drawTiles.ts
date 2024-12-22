@@ -68,9 +68,17 @@ function drawSingleTile(
     fillColor = [255, 255, 136];
   }
 
+  if (fillColor == null) {
+    throw new Error("Invalid tile type");
+  } else if (fillColor.length !== 3) {
+    throw new Error("Invalid fill color");
+  }
+
   const alpha = isPreview ? 0.3 : 1.0;
   const fillHex = (fillColor[0] << 16) + (fillColor[1] << 8) + fillColor[2];
-
+  if (Number.isNaN(fillHex)) {
+    throw new Error("Invalid fill color");
+  }
   // Draw the base rect
   g.rect(x, y, size, size).fill({ color: fillHex, alpha });
 
