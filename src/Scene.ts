@@ -21,7 +21,7 @@ export class Scene {
     private state: AppState,
     private eventBus: EventBus<CameraEvents>,
     private territoryManager: TerritoryManager,
-    private cityNameAssigner: CityNameAssigner,
+    private cityNameAssigner: CityNameAssigner
   ) {
     this.cameraContainer = new Container();
     this.gridContainer = createGrid();
@@ -33,7 +33,7 @@ export class Scene {
       this.gridContainer,
       this.zoneContainer,
       this.tilesContainer,
-      this.previewContainer,
+      this.previewContainer
     );
     this.app.stage.addChild(this.cameraContainer);
 
@@ -73,14 +73,16 @@ export class Scene {
   public render(camera: CameraState) {
     this.cameraContainer.position.set(
       -camera.offset.x * camera.scale + this.app.screen.width / 2,
-      -camera.offset.y * camera.scale + this.app.screen.height / 2,
+      -camera.offset.y * camera.scale + this.app.screen.height / 2
     );
     this.cameraContainer.scale.set(camera.scale);
 
-    this.zoneContainer.removeChildren();
+    for (const child of this.zoneContainer.removeChildren()) {
+      child.destroy(true);
+    }
     const zones = this.territoryManager.computeBannerZones(
       this.state.placedTiles,
-      this.state.previewTile ?? undefined,
+      this.state.previewTile ?? undefined
     );
 
     // Draw zone overlays
@@ -102,15 +104,19 @@ export class Scene {
       colorIndex++;
     }
 
-    this.tilesContainer.removeChildren();
+    for (const child of this.tilesContainer.removeChildren()) {
+      child.destroy(true);
+    }
     this.state.nameAssignments = this.cityNameAssigner.assignNames(
       this.state.placedTiles,
       this.state.cityNames,
-      this.state.bearTrapPosition,
+      this.state.bearTrapPosition
     );
     drawTiles(this.tilesContainer, this.state, zones);
 
-    this.previewContainer.removeChildren();
+    for (const child of this.previewContainer.removeChildren()) {
+      child.destroy(true);
+    }
     if (this.state.isInPlacementMode && this.state.previewTile) {
       drawPreviewTile(this.previewContainer, this.state, zones);
     }
