@@ -25,7 +25,7 @@ export class PlacementManager {
     scene: Scene,
     placementControls: PlacementControls,
     renderCallback: () => void,
-    eventBus: EventBus<PlacementEvents>,
+    eventBus: EventBus<PlacementEvents>
   ) {
     this.state = state;
     this.scene = scene;
@@ -77,7 +77,7 @@ export class PlacementManager {
       this.placementControls.show(
         this.canPlaceTile(this.state.previewTile),
         () => this.finalizePlacement(),
-        () => this.cancelPlacementMode(),
+        () => this.cancelPlacementMode()
       );
       this.renderCallback();
     } else {
@@ -135,48 +135,59 @@ export class PlacementManager {
       // Trying to pick up or remove an existing tile
       const pos = this.scene.screenToTile({ x: screenX, y: screenY });
       const clickedTile = this.occupiedMap.get(
-        createKey(Math.floor(pos.x), Math.floor(pos.y)),
+        createKey(Math.floor(pos.x), Math.floor(pos.y))
       );
 
       // If there’s a tile and not eraser
       if (clickedTile && clickedTile.type !== "eraser") {
-        // Remove from map + array
-        this.removeTileFromMap(clickedTile);
-        const index = this.state.placedTiles.indexOf(clickedTile);
-        if (index >= 0) {
-          this.state.placedTiles.splice(index, 1);
-        }
-
-        // Turn that tile into the selected tool
-        this.state.selectedTool = {
-          type: clickedTile.type,
-          size: clickedTile.size,
-        };
-        this.state.isInPlacementMode = true;
-        this.state.previewTile = { ...clickedTile };
-
-        // Emit so Toolbox shows the new selection
-        this.eventBus.emit("tool:select", {
-          type: clickedTile.type,
-          size: clickedTile.size,
-        });
-
-        console.log("Picked up tile", clickedTile);
-
-        // Move camera to the tile’s position
-        this.eventBus.emit("camera:move", {
-          offset: this.scene.tileToWorld({
-            x: clickedTile.x + clickedTile.size / 2,
-            y: clickedTile.y + clickedTile.size / 2,
-          }),
-          scale: this.state.camera.scale,
-        });
-        this.renderCallback();
+        this.handleTilePickUp(clickedTile);
       }
     } else {
       // Possibly finalize placement if you want click-to-place
       // (Currently we require the confirm button to finalize)
     }
+  }
+
+  private handleTilePickUp(clickedTile: Tile) {
+    // Remove from map + array
+    this.removeTileFromMap(clickedTile);
+    const index = this.state.placedTiles.indexOf(clickedTile);
+    if (index >= 0) {
+      this.state.placedTiles.splice(index, 1);
+    }
+
+    // Turn that tile into the selected tool
+    this.state.selectedTool = {
+      type: clickedTile.type,
+      size: clickedTile.size,
+    };
+    this.state.isInPlacementMode = true;
+    this.state.previewTile = { ...clickedTile };
+
+    // Emit so Toolbox shows the new selection
+    this.eventBus.emit("tool:select", {
+      type: clickedTile.type,
+      size: clickedTile.size,
+    });
+
+    console.log("Picked up tile", clickedTile);
+
+    // Move camera to the tile’s position
+    const sin = Math.sin(-Math.PI / 4);
+    const cos = Math.cos(-Math.PI / 4);
+    const position = {
+      x: clickedTile.x + clickedTile.size / 2,
+      y: clickedTile.y + clickedTile.size / 2,
+    };
+    const cameraOffset = {
+      x: position.x * cos - position.y * sin,
+      y: position.x * sin + position.y * cos,
+    };
+    this.eventBus.emit("camera:move", {
+      offset: this.scene.tileToWorld(cameraOffset),
+      scale: this.state.camera.scale,
+    });
+    this.renderCallback();
   }
 
   private onCameraMoved() {
@@ -191,13 +202,16 @@ export class PlacementManager {
     }
 
     const { offset } = this.state.camera;
+    const sin = Math.sin(Math.PI / 4);
+    const cos = Math.cos(Math.PI / 4);
+    const cameraOffset = {
+      x: offset.x * cos - offset.y * sin,
+      y: offset.x * sin + offset.y * cos,
+    };
     // Center tile on camera offset
-    const gx = Math.round(
-      offset.x / GRID_SIZE - this.state.selectedTool.size / 2,
-    );
-    const gy = Math.round(
-      offset.y / GRID_SIZE - this.state.selectedTool.size / 2,
-    );
+    const position = this.scene.worldToTile(cameraOffset);
+    const gx = Math.round(position.x - this.state.selectedTool.size / 2);
+    const gy = Math.round(position.y - this.state.selectedTool.size / 2);
 
     this.state.previewTile = {
       x: gx,
@@ -208,7 +222,7 @@ export class PlacementManager {
 
     // Check if it can be placed
     this.placementControls.updateConfirmState(
-      this.canPlaceTile(this.state.previewTile),
+      this.canPlaceTile(this.state.previewTile)
     );
     this.renderCallback();
   }

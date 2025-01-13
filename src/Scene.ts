@@ -77,6 +77,10 @@ export class Scene {
     );
     this.cameraContainer.scale.set(camera.scale);
 
+    // Add rotation
+    const rotationAngle = -Math.PI / 4; // 45 degrees
+    this.cameraContainer.rotation = rotationAngle;
+
     for (const child of this.zoneContainer.removeChildren()) {
       child.destroy(true);
     }
