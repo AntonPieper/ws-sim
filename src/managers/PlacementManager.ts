@@ -1,5 +1,4 @@
 import { AppState } from "../data/AppState";
-import { GRID_SIZE } from "../data/constants";
 import { CameraEvents, ToolEvents } from "../data/events";
 import { SelectedTool, Tile } from "../data/types";
 import { EventBus } from "../EventBus";
@@ -25,7 +24,7 @@ export class PlacementManager {
     scene: Scene,
     placementControls: PlacementControls,
     renderCallback: () => void,
-    eventBus: EventBus<PlacementEvents>,
+    eventBus: EventBus<PlacementEvents>
   ) {
     this.state = state;
     this.scene = scene;
@@ -77,7 +76,7 @@ export class PlacementManager {
       this.placementControls.show(
         this.canPlaceTile(this.state.previewTile),
         () => this.finalizePlacement(),
-        () => this.cancelPlacementMode(),
+        () => this.cancelPlacementMode()
       );
       this.renderCallback();
     } else {
@@ -135,7 +134,7 @@ export class PlacementManager {
       // Trying to pick up or remove an existing tile
       const pos = this.scene.screenToTile({ x: screenX, y: screenY });
       const clickedTile = this.occupiedMap.get(
-        createKey(Math.floor(pos.x), Math.floor(pos.y)),
+        createKey(Math.floor(pos.x), Math.floor(pos.y))
       );
 
       // If there’s a tile and not eraser
@@ -222,7 +221,7 @@ export class PlacementManager {
 
     // Check if it can be placed
     this.placementControls.updateConfirmState(
-      this.canPlaceTile(this.state.previewTile),
+      this.canPlaceTile(this.state.previewTile)
     );
     this.renderCallback();
   }
