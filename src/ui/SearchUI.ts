@@ -6,13 +6,13 @@ export class SearchUI {
 
   constructor(
     private searchManager: SearchManager,
-    private jumpToBuilding: (name: string) => void
+    private jumpToBuilding: (name: string) => void,
   ) {
     this.buildingSearch = document.getElementById(
-      "buildingSearch"
+      "buildingSearch",
     ) as HTMLInputElement;
     this.searchResults = document.getElementById(
-      "searchResults"
+      "searchResults",
     ) as HTMLDivElement;
 
     this.initializeSearchListeners();
@@ -30,7 +30,7 @@ export class SearchUI {
 
     this.buildingSearch.addEventListener(
       "input",
-      debounce((event: Event) => this.handleSearchInput(event), 100)
+      debounce((event: Event) => this.handleSearchInput(event), 100),
     );
     this.buildingSearch.addEventListener("focus", (event) => {
       this.handleSearchInput(event);
