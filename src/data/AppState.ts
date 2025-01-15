@@ -1,4 +1,4 @@
-import { Tile, SelectedTool, CameraState, NameAssignment } from "./types";
+import { CameraState, SelectedTool, Tile } from "./types";
 
 export class AppState {
   placedTiles: Tile[] = [];
@@ -6,16 +6,18 @@ export class AppState {
     offset: { x: 0, y: 0 },
     scale: 1,
   };
-  bearTrapPosition: { x: number; y: number } | null = null;
+
+  /**
+   * -1 = use min distance to all bear traps;
+   * otherwise use that index in the array of bear traps
+   */
+  selectedTrapIndex: number = -1;
+
   selectedTool: SelectedTool = { type: null, size: 1 };
-  cityNames: string[] = [];
-  nameAssignments: Record<string, NameAssignment> = {};
   isInPlacementMode = false;
   previewTile: Tile | null = null;
+
+  // For color interpolation in drawTiles
   colorMin = 2;
   colorMax = 6;
-
-  get nameAssignmentList(): NameAssignment[] {
-    return Object.values(this.nameAssignments);
-  }
 }

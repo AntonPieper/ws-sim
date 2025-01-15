@@ -1,13 +1,12 @@
 import { Application, Container, Graphics } from "pixi.js";
 import { AppState } from "./data/AppState";
 import { BANNER_ZONE_COLORS, GRID_SIZE } from "./data/constants";
-import { CityNameAssigner } from "./managers/CityNameAssigner";
+import { CameraEvents } from "./data/events";
+import { CameraState, Position } from "./data/types";
+import { EventBus } from "./EventBus";
 import { TerritoryManager } from "./managers/TerritoryManager";
 import { drawPreviewTile, drawTiles } from "./rendering/drawTiles";
 import { createGrid } from "./rendering/GridRenderer";
-import { EventBus } from "./EventBus";
-import { CameraEvents } from "./data/events";
-import { CameraState, Position } from "./data/types";
 
 export class Scene {
   private cameraContainer: Container;
@@ -21,7 +20,6 @@ export class Scene {
     private state: AppState,
     private eventBus: EventBus<CameraEvents>,
     private territoryManager: TerritoryManager,
-    private cityNameAssigner: CityNameAssigner,
   ) {
     this.cameraContainer = new Container();
     this.gridContainer = createGrid();
@@ -71,19 +69,22 @@ export class Scene {
   }
 
   public render(camera: CameraState) {
+    // Position & scale
     this.cameraContainer.position.set(
       -camera.offset.x * camera.scale + this.app.screen.width / 2,
       -camera.offset.y * camera.scale + this.app.screen.height / 2,
     );
     this.cameraContainer.scale.set(camera.scale);
 
-    // Add rotation
-    const rotationAngle = -Math.PI / 4; // 45 degrees
+    // 45-degree rotation
+    const rotationAngle = -Math.PI / 4;
     this.cameraContainer.rotation = rotationAngle;
 
+    // Clear zone container
     for (const child of this.zoneContainer.removeChildren()) {
       child.destroy(true);
     }
+    // Build zone sets
     const zones = this.territoryManager.computeBannerZones(
       this.state.placedTiles,
       this.state.previewTile ?? undefined,
@@ -96,28 +97,24 @@ export class Scene {
       const zoneColor = (color.r << 16) + (color.g << 8) + color.b;
 
       for (const cellKey of zone) {
-        const [x, y] = cellKey.split(",").map(Number);
+        const [cx, cy] = cellKey.split(",").map(Number);
         const g = new Graphics();
-        g.rect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE).fill({
+        g.rect(cx * GRID_SIZE, cy * GRID_SIZE, GRID_SIZE, GRID_SIZE).fill({
           color: zoneColor,
           alpha: 0.2,
         });
         this.zoneContainer.addChild(g);
       }
-
       colorIndex++;
     }
 
+    // Clear and redraw tiles
     for (const child of this.tilesContainer.removeChildren()) {
       child.destroy(true);
     }
-    this.state.nameAssignments = this.cityNameAssigner.assignNames(
-      this.state.placedTiles,
-      this.state.cityNames,
-      this.state.bearTrapPosition,
-    );
     drawTiles(this.tilesContainer, this.state, zones);
 
+    // Clear and redraw preview
     for (const child of this.previewContainer.removeChildren()) {
       child.destroy(true);
     }

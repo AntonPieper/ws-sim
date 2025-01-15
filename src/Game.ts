@@ -4,7 +4,6 @@ import { Scene } from "./Scene";
 import { PixiCameraController } from "./camera/CameraController";
 import { AppState } from "./data/AppState";
 import { AllEvents } from "./data/events";
-import { CityNameAssigner } from "./managers/CityNameAssigner";
 import { PlacementManager } from "./managers/PlacementManager";
 import { SearchManager } from "./managers/SearchManager";
 import { TerritoryManager } from "./managers/TerritoryManager";
@@ -18,19 +17,24 @@ export class Game {
   private scene!: Scene;
   private state: AppState;
   private searchManager: SearchManager;
-  private cityNameAssigner: CityNameAssigner;
   private territoryManager: TerritoryManager;
   private placementControls: PlacementControls;
-
   private eventBus: EventBus<AllEvents> = new SimpleEventBus();
 
   constructor() {
     this.app = new Application();
     this.state = new AppState();
-    this.cityNameAssigner = new CityNameAssigner();
     this.territoryManager = new TerritoryManager();
     this.placementControls = new PlacementControls();
-    this.searchManager = new SearchManager(this.state.nameAssignmentList);
+
+    // You could adapt SearchManager to search tile.customName if desired
+    this.searchManager = new SearchManager(this.state.placedTiles);
+    this.eventBus.on("tile:placed", () => {
+      this.searchManager.updatePlacedTiles(this.state.placedTiles);
+    });
+    this.eventBus.on("tile:removed", () => {
+      this.searchManager.updatePlacedTiles(this.state.placedTiles);
+    });
   }
 
   async start(element?: HTMLCanvasElement | null) {
@@ -54,11 +58,9 @@ export class Game {
       this.state,
       this.eventBus,
       this.territoryManager,
-      this.cityNameAssigner,
     );
 
     initializeToolbox("toolbox", this.eventBus);
-
     // Initialize live updating for configuration settings
     new ConfigUI(this.state, this.eventBus); // Moved config panel logic here
     // Initialize search functionality
@@ -87,22 +89,19 @@ export class Game {
    * @param name The name of the building.
    */
   private jumpToBuilding(name: string): void {
-    const assignment = this.state.nameAssignmentList.find(
-      (a) => a.name === name,
-    );
-    if (!assignment) {
+    const tile = this.state.placedTiles.find((t) => t.customName === name);
+    if (!tile) {
       alert(`Building "${name}" not found.`);
       return;
     }
     const worldPos = this.scene.tileToWorld({
-      x: assignment.position.x + 1,
-      y: assignment.position.y + 1,
+      x: tile.x + tile.size / 2,
+      y: tile.y + tile.size / 2,
     });
-    // Center the camera on the building's position
-    this.state.camera.offset.x = worldPos.x;
-    this.state.camera.offset.y = worldPos.y;
-
-    // Emit camera moved event to trigger re-render
+    const sin = Math.sin(-Math.PI / 4);
+    const cos = Math.cos(-Math.PI / 4);
+    this.state.camera.offset.x = worldPos.x * cos - worldPos.y * sin;
+    this.state.camera.offset.y = worldPos.x * sin + worldPos.y * cos;
     this.eventBus.emit("camera:move", this.state.camera);
   }
 }

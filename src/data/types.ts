@@ -4,23 +4,25 @@ export type TileType =
   | "city"
   | "banner"
   | "resource"
-  | "eraser";
+  | "eraser"
+  | "block"; // (added "block" if you want that)
 
 export interface Position {
   x: number;
   y: number;
 }
 
-export interface NameAssignment {
-  name: string;
-  position: Position;
-}
-
+/**
+ * Updated Tile with an optional customName field
+ */
 export interface Tile {
   x: number;
   y: number;
   type: TileType;
   size: number;
+
+  // For user-assigned or edited building names
+  customName?: string;
 }
 
 export interface SelectedTool {

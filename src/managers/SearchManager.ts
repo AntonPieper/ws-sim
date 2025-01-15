@@ -1,31 +1,38 @@
 // src/managers/SearchManager.ts
 
-import { NameAssignment } from "../data/types";
+import { Tile } from "../data/types";
 
 export class SearchManager {
-  private nameAssignments: NameAssignment[];
+  private placedTiles: Tile[];
 
-  constructor(nameAssignments: NameAssignment[]) {
-    this.nameAssignments = nameAssignments;
+  constructor(initialTiles: Tile[]) {
+    // You can pass in the state's placedTiles from Game.ts
+    this.placedTiles = initialTiles;
   }
 
   /**
-   * Updates the list of name assignments.
-   * @param nameAssignments The updated list of name assignments.
+   * Keep the placedTiles in sync with the AppState after placement/removal.
    */
-  updateNameAssignments(nameAssignments: NameAssignment[]): void {
-    this.nameAssignments = nameAssignments;
+  updatePlacedTiles(newTiles: Tile[]): void {
+    this.placedTiles = newTiles;
   }
 
   /**
-   * Searches for buildings by name.
-   * @param query The search query.
-   * @returns An array of matching NameAssignments.
+   * Searches for buildings by their customName (case-insensitive).
+   * Returns a simple object containing the matched name so the UI can show it.
    */
-  search(query: string): NameAssignment[] {
+  search(query: string): { name: string }[] {
     const lowerQuery = query.toLowerCase();
-    return this.nameAssignments.filter((assignment) =>
-      assignment.name.toLowerCase().includes(lowerQuery),
-    );
+    return this.placedTiles
+      .filter((tile) => {
+        // Only match if tile has a customName and it contains the query
+        return (
+          tile.customName && tile.customName.toLowerCase().includes(lowerQuery)
+        );
+      })
+      .map((tile) => {
+        // Return something the SearchUI can display
+        return { name: tile.customName! };
+      });
   }
 }
