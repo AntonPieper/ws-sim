@@ -22,37 +22,34 @@ export class ConfigUI {
   // Dropdown for switching between "Min Distance" and a chosen bear trap index
   private bearTrapSelector: HTMLSelectElement;
 
-  constructor(
-    private state: AppState,
-    private eventBus: EventBus<AllEvents>,
-  ) {
+  constructor(private state: AppState, private eventBus: EventBus<AllEvents>) {
     // Grab all required DOM elements by ID
     this.configNameInput = document.getElementById(
-      "configName",
+      "configName"
     ) as HTMLInputElement;
     this.configList = document.getElementById(
-      "configList",
+      "configList"
     ) as HTMLSelectElement;
     this.configManagerPanel = document.getElementById(
-      "configManager",
+      "configManager"
     ) as HTMLDivElement;
     this.cityNamesInput = document.getElementById(
-      "cityNamesInput",
+      "cityNamesInput"
     ) as HTMLTextAreaElement;
     this.colorMinInput = document.getElementById(
-      "colorMin",
+      "colorMin"
     ) as HTMLInputElement;
     this.colorMaxInput = document.getElementById(
-      "colorMax",
+      "colorMax"
     ) as HTMLInputElement;
     this.importFileInput = document.getElementById(
-      "importConfigInput",
+      "importConfigInput"
     ) as HTMLInputElement;
 
     // If you placed a <select id="bearTrapSelector"> in index.html
     // otherwise, remove all references to bearTrapSelector
     this.bearTrapSelector = document.getElementById(
-      "bearTrapSelector",
+      "bearTrapSelector"
     ) as HTMLSelectElement;
 
     // Add event listeners, populate config list, etc.
@@ -84,7 +81,7 @@ export class ConfigUI {
 
     // File input for import
     this.importFileInput.addEventListener("change", (event) =>
-      this.handleImportFile(event),
+      this.handleImportFile(event)
     );
 
     // Optional city names text area (if still used)
@@ -113,7 +110,7 @@ export class ConfigUI {
       this.bearTrapSelector.addEventListener("change", () => {
         this.state.selectedTrapIndex = parseInt(
           this.bearTrapSelector.value,
-          10,
+          10
         );
         // Force a re-render so distances update
         this.eventBus.emit("camera:move", this.state.camera);
@@ -133,9 +130,9 @@ export class ConfigUI {
 
     // Filter out all bear_trap tiles
     const bearTraps = this.state.placedTiles.filter(
-      (t) => t.type === "bear_trap",
+      (t) => t.type === "bear_trap"
     );
-    bearTraps.forEach((trap, i) => {
+    bearTraps.forEach((_, i) => {
       const opt = document.createElement("option");
       opt.value = String(i);
       opt.textContent = `Bear Trap #${i + 1}`;
@@ -278,7 +275,7 @@ export class ConfigUI {
         const content = reader.result as string;
         const configName = prompt(
           "Enter a name for the imported configuration:",
-          file.name.replace(/\.[^/.]+$/, ""), // remove file extension
+          file.name.replace(/\.[^/.]+$/, "") // remove file extension
         );
         if (!configName) {
           alert("Import cancelled: no config name provided.");
@@ -288,7 +285,7 @@ export class ConfigUI {
         const existingConfigs = ConfigurationManager.listConfigurations();
         if (existingConfigs.includes(configName)) {
           const overwrite = confirm(
-            `Configuration "${configName}" already exists. Overwrite?`,
+            `Configuration "${configName}" already exists. Overwrite?`
           );
           if (!overwrite) {
             alert("Import cancelled: config name exists.");
@@ -298,7 +295,7 @@ export class ConfigUI {
 
         const success = ConfigurationManager.importConfiguration(
           configName,
-          content,
+          content
         );
         if (success) {
           this.refreshConfigList();
